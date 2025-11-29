@@ -4,7 +4,7 @@
 
 # Example justfile for a Java/Maven project using devbase-justkit
 
-devtools_repo := "https://github.com/diggsweden/devbase-justkit"
+devtools_repo := env("DEVBASE_JUSTKIT_REPO", "https://github.com/diggsweden/devbase-justkit")
 devtools_dir := env("XDG_DATA_HOME", env("HOME") + "/.local/share") + "/devbase-justkit"
 lint := devtools_dir + "/linters"
 java_lint := devtools_dir + "/linters/java"

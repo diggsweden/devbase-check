@@ -26,7 +26,7 @@ See `examples/` folder for complete, ready-to-use justfiles:
 Add to your project's justfile:
 
 ```just
-devtools_repo := "https://github.com/diggsweden/devbase-justkit"
+devtools_repo := env("DEVBASE_JUSTKIT_REPO", "https://github.com/diggsweden/devbase-justkit")
 devtools_dir := env("XDG_DATA_HOME", env("HOME") + "/.local/share") + "/devbase-justkit"
 lint := devtools_dir + "/linters"
 colors := devtools_dir + "/utils/colors.sh"
@@ -227,6 +227,28 @@ Available functions:
 | `just_success "msg"` | Green ✓ message |
 | `just_error "msg"` | Red ✗ message |
 | `just_warn "msg"` | Yellow ! message |
+
+## Configuration
+
+### Custom Repository Location
+
+Override the default repository URL via environment variable:
+
+```bash
+# Bash/Zsh - add to .bashrc or .zshrc
+export DEVBASE_JUSTKIT_REPO="https://internal.git/org/devbase-justkit"
+```
+
+```fish
+# Fish - add to config.fish
+set -gx DEVBASE_JUSTKIT_REPO "https://internal.git/org/devbase-justkit"
+```
+
+The justfile picks this up automatically:
+
+```just
+devtools_repo := env("DEVBASE_JUSTKIT_REPO", "https://github.com/diggsweden/devbase-justkit")
+```
 
 ## Directory Structure
 
