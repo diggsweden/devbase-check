@@ -32,6 +32,18 @@ main() {
   current_branch=$(git branch --show-current)
   default_branch=$(get_default_branch)
 
+  # Skip if on the base branch itself (conform can't handle base..HEAD when they're the same)
+  if [[ "$current_branch" == "$default_branch" ]]; then
+    print_info "On ${default_branch} - checking HEAD commit only"
+    if conform enforce 2>/dev/null; then
+      print_success "Commit health check passed"
+      return 0
+    else
+      print_error "Commit health check failed - check your commit messages"
+      return 1
+    fi
+  fi
+
   if ! has_commits_to_check "$default_branch"; then
     print_info "No commits to check on ${current_branch} (compared to ${default_branch})"
     return 0

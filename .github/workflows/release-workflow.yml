@@ -29,6 +29,6 @@ jobs:
       artifacts-config: .github/artifacts.yml
       changelog-creator: git-cliff
       release-publisher: github-cli
-      release.draft: true
+      release.draft: false
       # Skip version bump (no version files to update)
       changelog.skipversionbump: true
