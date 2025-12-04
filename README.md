@@ -56,6 +56,8 @@ Run `just setup-devtools` again to check for updates:
 
 You get base linters for free. Add language-specific linters if needed.
 
+![lint-base composition](assets/lintbase.png)
+
 - **`lint-base`** - 10 linters that work on any project (YAML, shell, secrets, etc.)
 - **`lint-all`** - Uses `lint-base`, override to add Java/Node/Python linters
 - **Individual recipes** - Run `just lint-yaml` or `just lint-shell` separately

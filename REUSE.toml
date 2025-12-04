@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+
+version = 1
+
+# Documentation and configuration files
+[[annotations]]
+path = [
+    "README.md",
+    "REUSE.toml",
+    ".mise.toml",
+    "justfile",
+    "renovate.json",
+    ".github/**/*.yml",
+    "examples/*",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 Digg - Agency for Digital Government"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Assets (images, diagrams)
+[[annotations]]
+path = [
+    "assets/**/*.png",
+    "assets/**/*.jpg",
+    "assets/**/*.svg",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 Digg - Agency for Digital Government"
+SPDX-License-Identifier = "CC0-1.0"
