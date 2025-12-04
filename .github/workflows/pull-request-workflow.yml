@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+name: Pull Request Workflow
+on: # yamllint disable-line rule:truthy
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pr-checks:
+    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@1bf6632ce48686293b0dead5f7bd2bcb5e820172 # v2.3.1
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    secrets: inherit
+    with:
+      # No buildable artifacts - this is a linting toolkit
+      project-type: maven
+      # Use just+mise-based linting (replaces commitlint, licenselint, megalint)
+      linters.justmiselint: true
+      # Disable deprecated linters (handled by justmiselint)
+      linters.commitlint: false
+      linters.licenselint: false
+      linters.megalint: false
+      linters.publiccodelint: false

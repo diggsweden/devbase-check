@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+# No build artifacts for devbase-justkit
+# This is a script library distributed via git
+artifacts: []

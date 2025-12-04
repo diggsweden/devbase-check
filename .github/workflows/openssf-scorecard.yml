@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+name: OpenSSF Scorecard Analysis
+on:
+  schedule:
+    # Saturdays at 02:15 UTC
+    - cron: "15 2 * * 6"
+    # Wednesdays at 02:15 UTC
+    - cron: "15 2 * * 3"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scorecard-analysis:
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    uses: diggsweden/reusable-ci/.github/workflows/security-openssf-scorecard.yml@1bf6632ce48686293b0dead5f7bd2bcb5e820172 # v2.3.1
+    with:
+      publish-results: true
