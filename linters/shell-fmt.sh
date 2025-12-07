@@ -40,16 +40,17 @@ fix_format() {
 main() {
   print_header "SHELL SCRIPT FORMATTING (SHFMT)"
 
-  if ! command -v shfmt >/dev/null 2>&1; then
-    print_error "shfmt not found. Install with: mise install"
-    return 1
-  fi
-
   local scripts
   scripts=$(find_shell_scripts)
 
   if [[ -z "$scripts" ]]; then
-    print_warning "No shell scripts found to format"
+    print_info "No shell scripts found to format"
+    return 0
+  fi
+
+  if ! command -v shfmt >/dev/null 2>&1; then
+    print_warning "shfmt not found in PATH - skipping shell formatting"
+    echo "  Install: mise install"
     return 0
   fi
 

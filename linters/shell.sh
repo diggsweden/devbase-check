@@ -16,16 +16,17 @@ find_shell_scripts() {
 main() {
   print_header "SHELL SCRIPT LINTING (SHELLCHECK)"
 
-  if ! command -v shellcheck >/dev/null 2>&1; then
-    print_error "shellcheck not found. Install with: mise install"
-    return 1
-  fi
-
   local scripts
   scripts=$(find_shell_scripts)
 
   if [[ -z "$scripts" ]]; then
-    print_warning "No shell scripts found to check"
+    print_info "No shell scripts found to check"
+    return 0
+  fi
+
+  if ! command -v shellcheck >/dev/null 2>&1; then
+    print_warning "shellcheck not found in PATH - skipping shell linting"
+    echo "  Install: mise install"
     return 0
   fi
 

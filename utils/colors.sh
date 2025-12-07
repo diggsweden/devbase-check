@@ -27,7 +27,7 @@ export ARROW='→'
 
 # Helper functions for linter scripts
 print_header() {
-  printf "\n%b************ %s ***********%b\n\n" "${YELLOW}" "$1" "${NC}"
+  printf "\n%b************ %s ***********%b\n" "${YELLOW}" "$1" "${NC}"
 }
 
 print_success() {

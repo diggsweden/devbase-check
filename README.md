@@ -113,7 +113,11 @@ Override `lint-all` in your justfile to add Java, Node, Python, etc.:
 java_lint := devtools_dir + "/linters/java"
 
 # Extend base linters with Java-specific ones
-lint-all: lint-base lint-java
+lint-all: _ensure-devtools lint-java
+    #!/usr/bin/env bash
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
 
 lint-java:
     @{{java_lint}}/lint.sh
@@ -127,7 +131,11 @@ See [`examples/java-justfile`](examples/java-justfile) for a complete example.
 node_lint := devtools_dir + "/linters/node"
 
 # Extend base linters with Node linters
-lint-all: lint-base lint-node
+lint-all: _ensure-devtools lint-node
+    #!/usr/bin/env bash
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
 
 lint-node:
     @{{node_lint}}/lint.sh
@@ -139,7 +147,11 @@ See [`examples/node-justfile`](examples/node-justfile) for a complete example.
 
 ```just
 # Extend base linters with Python linters
-lint-all: lint-base lint-python
+lint-all: _ensure-devtools lint-python
+    #!/usr/bin/env bash
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
 
 lint-python:
     #!/usr/bin/env bash
@@ -154,7 +166,11 @@ lint-python:
 
 ```just
 # Extend base linters with Go linters
-lint-all: lint-base lint-go
+lint-all: _ensure-devtools lint-go
+    #!/usr/bin/env bash
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
 
 lint-go:
     #!/usr/bin/env bash
@@ -169,7 +185,11 @@ lint-go:
 
 ```just
 # Extend base linters with Rust linters
-lint-all: lint-base lint-rust
+lint-all: _ensure-devtools lint-rust
+    #!/usr/bin/env bash
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
 
 lint-rust:
     #!/usr/bin/env bash
@@ -183,14 +203,19 @@ lint-rust:
 ### Minimal Project (base linters only)
 
 ```just
-# Default behavior - no need to override
-# Just run: just lint-all
+# Run all linters (uses base linters only)
+lint-all: _ensure-devtools
+    @just --justfile {{devtools_dir}}/justfile lint-base
 ```
 
 ### Multiple Languages
 
 ```just
-lint-all: lint-base lint-java lint-python lint-ts
+lint-all: _ensure-devtools lint-java lint-python lint-node
+    #!/usr/bin/env bash
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
 ```
 
 ## Utilities

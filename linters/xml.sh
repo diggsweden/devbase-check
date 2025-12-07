@@ -20,12 +20,12 @@ main() {
   files=$(find_xml_files)
 
   if [[ -z "$files" ]]; then
-    print_warning "No XML files found to check"
+    print_info "No XML files found to check"
     return 0
   fi
 
   if ! command -v xmllint >/dev/null 2>&1; then
-    print_warning "xmllint not found - skipping XML linting"
+    print_warning "xmllint not found in PATH - skipping XML linting"
     echo "  Install: Ubuntu/Debian: sudo apt install libxml2-utils"
     echo "           Fedora/RHEL:   sudo dnf install libxml2"
     echo "           macOS:         brew install libxml2"

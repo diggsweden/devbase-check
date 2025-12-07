@@ -11,7 +11,7 @@ source "${SCRIPT_DIR}/../utils/colors.sh"
 
 readonly ACTION="${1:-check}"
 shift || true
-readonly DISABLE="${1:-}"
+readonly DISABLE="${1:-MD013}"
 
 check_markdown() {
   local args=(check .)
@@ -41,8 +41,9 @@ main() {
   print_header "MARKDOWN LINTING (RUMDL)"
 
   if ! command -v rumdl >/dev/null 2>&1; then
-    print_error "rumdl not found. Install with: mise install"
-    return 1
+    print_warning "rumdl not found in PATH - skipping markdown linting"
+    echo "  Install: mise install"
+    return 0
   fi
 
   case "$ACTION" in

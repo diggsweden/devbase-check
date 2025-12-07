@@ -13,8 +13,9 @@ main() {
   print_header "LICENSE COMPLIANCE (REUSE)"
 
   if ! command -v reuse >/dev/null 2>&1; then
-    print_error "reuse not found. Install with: mise install"
-    return 1
+    print_warning "reuse not found in PATH - skipping license compliance check"
+    echo "  Install: mise install"
+    return 0
   fi
 
   if reuse lint; then

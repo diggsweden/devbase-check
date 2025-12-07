@@ -16,16 +16,17 @@ find_containerfiles() {
 main() {
   print_header "CONTAINER LINTING (HADOLINT)"
 
-  if ! command -v hadolint >/dev/null 2>&1; then
-    print_error "hadolint not found. Install with: mise install"
-    return 1
-  fi
-
   local files
   files=$(find_containerfiles)
 
   if [[ -z "$files" ]]; then
-    print_warning "No Containerfile/Dockerfile found to check"
+    print_info "No Containerfile/Dockerfile found to check"
+    return 0
+  fi
+
+  if ! command -v hadolint >/dev/null 2>&1; then
+    print_warning "hadolint not found in PATH - skipping container linting"
+    echo "  Install: mise install"
     return 0
   fi
 

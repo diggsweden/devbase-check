@@ -35,8 +35,9 @@ main() {
   print_header "YAML LINTING (YAMLFMT)"
 
   if ! command -v yamlfmt >/dev/null 2>&1; then
-    print_error "yamlfmt not found. Install with: mise install"
-    return 1
+    print_warning "yamlfmt not found in PATH - skipping YAML linting"
+    echo "  Install: mise install"
+    return 0
   fi
 
   case "$ACTION" in

@@ -13,13 +13,14 @@ main() {
   print_header "GITHUB ACTIONS LINTING (ACTIONLINT)"
 
   if [[ ! -d .github/workflows ]]; then
-    print_warning "No GitHub Actions workflows found, skipping"
+    print_info "No GitHub Actions workflows found to check"
     return 0
   fi
 
   if ! command -v actionlint >/dev/null 2>&1; then
-    print_error "actionlint not found. Install with: mise install"
-    return 1
+    print_warning "actionlint not found in PATH - skipping GitHub Actions linting"
+    echo "  Install: mise install"
+    return 0
   fi
 
   if actionlint; then

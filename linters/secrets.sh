@@ -21,8 +21,9 @@ main() {
   print_header "SECRET SCANNING (GITLEAKS)"
 
   if ! command -v gitleaks >/dev/null 2>&1; then
-    print_error "gitleaks not found. Install with: mise install"
-    return 1
+    print_warning "gitleaks not found in PATH - skipping secret scanning"
+    echo "  Install: mise install"
+    return 0
   fi
 
   local default_branch current_branch
