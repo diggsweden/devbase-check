@@ -42,27 +42,12 @@ verify:
 
 # ▪ Run all base linters (universal linters for any project)
 [group('lint')]
-lint-base: \
-    lint-commits \
-    lint-secrets \
-    lint-yaml \
-    lint-markdown \
-    lint-shell \
-    lint-shell-fmt \
-    lint-actions \
-    lint-license \
-    lint-container \
-    lint-xml
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just_success "All base linting checks completed"
+lint-base:
+    @./scripts/verify.sh
 
 # ▪ Run all linters (default, uses lint-base)
 [group('lint')]
 lint-all: lint-base
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just_success "All linting checks completed"
 
 # Validate commit messages (conform)
 [group('lint')]
