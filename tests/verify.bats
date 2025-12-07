@@ -103,3 +103,117 @@ EOF
   assert_output --regexp "[0-9]+ passed"
   assert_output --regexp "\(of [0-9]+\)"
 }
+
+@test "verify.sh respects justfile recipe overrides for base linters" {
+  cat > justfile << EOF
+# SPDX-FileCopyrightText: 2025 Test
+# SPDX-License-Identifier: MIT
+lint-commits:
+    @${DEVBASE_DIR}/linters/commits.sh
+lint-secrets:
+    @${DEVBASE_DIR}/linters/secrets.sh
+lint-yaml:
+    @${DEVBASE_DIR}/linters/yaml.sh check
+lint-markdown:
+    @${DEVBASE_DIR}/linters/markdown.sh check
+lint-shell:
+    @${DEVBASE_DIR}/linters/shell.sh
+lint-shell-fmt:
+    @${DEVBASE_DIR}/linters/shell-fmt.sh check
+lint-actions:
+    @${DEVBASE_DIR}/linters/github-actions.sh
+lint-license:
+    @echo "Skipping license check"
+lint-container:
+    @${DEVBASE_DIR}/linters/container.sh
+lint-xml:
+    @${DEVBASE_DIR}/linters/xml.sh
+EOF
+  
+  run "$SCRIPT_DIR/verify.sh"
+  
+  # Should show the custom message instead of running license.sh
+  assert_output --partial "Skipping license check"
+  # Should NOT run actual license check
+  refute_output --partial "REUSE"
+}
+
+@test "verify.sh respects Java linter recipe overrides" {
+  cat > justfile << EOF
+# SPDX-FileCopyrightText: 2025 Test
+# SPDX-License-Identifier: MIT
+lint-commits:
+    @${DEVBASE_DIR}/linters/commits.sh
+lint-secrets:
+    @${DEVBASE_DIR}/linters/secrets.sh
+lint-yaml:
+    @${DEVBASE_DIR}/linters/yaml.sh check
+lint-markdown:
+    @${DEVBASE_DIR}/linters/markdown.sh check
+lint-shell:
+    @${DEVBASE_DIR}/linters/shell.sh
+lint-shell-fmt:
+    @${DEVBASE_DIR}/linters/shell-fmt.sh check
+lint-actions:
+    @${DEVBASE_DIR}/linters/github-actions.sh
+lint-license:
+    @${DEVBASE_DIR}/linters/license.sh
+lint-container:
+    @${DEVBASE_DIR}/linters/container.sh
+lint-xml:
+    @${DEVBASE_DIR}/linters/xml.sh
+lint-java-checkstyle:
+    @echo "Custom Java Checkstyle"
+lint-java-pmd:
+    @${DEVBASE_DIR}/linters/java/pmd.sh
+lint-java-spotbugs:
+    @${DEVBASE_DIR}/linters/java/spotbugs.sh
+EOF
+  
+  run "$SCRIPT_DIR/verify.sh"
+  
+  # Should show the custom message for overridden recipe
+  assert_output --partial "Custom Java Checkstyle"
+  # Should show Java Checkstyle in summary
+  assert_output --partial "Java Checkstyle"
+}
+
+@test "verify.sh respects Node linter recipe overrides" {
+  cat > justfile << EOF
+# SPDX-FileCopyrightText: 2025 Test
+# SPDX-License-Identifier: MIT
+lint-commits:
+    @${DEVBASE_DIR}/linters/commits.sh
+lint-secrets:
+    @${DEVBASE_DIR}/linters/secrets.sh
+lint-yaml:
+    @${DEVBASE_DIR}/linters/yaml.sh check
+lint-markdown:
+    @${DEVBASE_DIR}/linters/markdown.sh check
+lint-shell:
+    @${DEVBASE_DIR}/linters/shell.sh
+lint-shell-fmt:
+    @${DEVBASE_DIR}/linters/shell-fmt.sh check
+lint-actions:
+    @${DEVBASE_DIR}/linters/github-actions.sh
+lint-license:
+    @${DEVBASE_DIR}/linters/license.sh
+lint-container:
+    @${DEVBASE_DIR}/linters/container.sh
+lint-xml:
+    @${DEVBASE_DIR}/linters/xml.sh
+lint-node-eslint:
+    @echo "Custom Node ESLint"
+lint-node-format:
+    @${DEVBASE_DIR}/linters/node/format.sh check
+lint-node-ts-types:
+    @${DEVBASE_DIR}/linters/node/types.sh
+EOF
+  
+  run "$SCRIPT_DIR/verify.sh"
+  
+  # Should show the custom message for overridden recipe
+  assert_output --partial "Custom Node ESLint"
+  # Should show Node ESLint in summary
+  assert_output --partial "Node ESLint"
+}
