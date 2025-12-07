@@ -136,6 +136,10 @@ EOF
   assert_output --partial "Skipping license check"
   # Should NOT run actual license check
   refute_output --partial "REUSE"
+  # Should show as skipped in summary
+  assert_output --partial "skipped"
+  # Should count as skipped
+  assert_output --regexp "[0-9]+ skipped"
 }
 
 @test "verify.sh respects Java linter recipe overrides" {

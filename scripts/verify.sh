@@ -70,6 +70,9 @@ run_linters() {
       if grep -q "not found in PATH" <<<"$output"; then
         status="skip"
         details="not in PATH"
+      elif grep -qiE "Skipping|Skip" <<<"$output"; then
+        status="skip"
+        details="skipped"
       elif grep -qE "No .* (files? found|to check)|no commits to check" <<<"$output"; then
         status="n/a"
         details="n/a"

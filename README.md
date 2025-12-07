@@ -250,6 +250,71 @@ lint-node-eslint:
 
 All defined `lint-*` recipes are automatically detected and included in the summary.
 
+## Customizing and Skipping Linters
+
+You can override any linter recipe in your project's justfile to customize behavior or skip checks.
+
+### Skip a Linter
+
+To skip a linter completely, override the recipe and output a message containing "Skip" or "Skipping". The verify script will mark it as skipped (yellow `-`) in the summary:
+
+```just
+# Skip license compliance checks
+lint-license:
+    @echo "Skipping license check"
+
+# Skip a Java linter
+lint-java-checkstyle:
+    @echo "Skipping Checkstyle"
+```
+
+**Result in summary:**
+
+```text
+License                reuse         -  skipped
+Java Checkstyle        checkstyle    -  skipped
+```
+
+### Customize a Linter
+
+Override a recipe to use custom configurations or different tools:
+
+```just
+# Use custom shellcheck config
+lint-shell:
+    @shellcheck --severity=warning --exclude=SC2034 **/*.sh
+
+# Run checkstyle with custom rules
+lint-java-checkstyle:
+    @mvn checkstyle:check -Dcheckstyle.config.location=custom-checks.xml
+```
+
+### Conditional Linting
+
+Skip linters conditionally based on environment or files:
+
+```just
+# Skip license check in development, run in CI
+lint-license:
+    #!/usr/bin/env bash
+    if [[ "${CI:-}" == "true" ]]; then
+        {{lint}}/license.sh
+    else
+        echo "Skipping license check in development"
+    fi
+
+# Skip spotbugs if no Java code changed
+lint-java-spotbugs:
+    #!/usr/bin/env bash
+    if git diff --name-only main | grep -q "\.java$"; then
+        {{java_lint}}/spotbugs.sh
+    else
+        echo "Skipping SpotBugs - no Java files changed"
+    fi
+```
+
+**Note:** The justfile is the interface - `verify.sh` respects all recipe overrides. Changes take effect immediately without updating devbase-justkit.
+
 ## Utilities
 
 Use `colors.sh` for consistent output in custom recipes:
