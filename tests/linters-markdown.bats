@@ -4,66 +4,47 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Tests for linters/markdown.sh
-
 bats_require_minimum_version 1.13.0
 
 load "${BATS_TEST_DIRNAME}/libs/bats-support/load.bash"
 load "${BATS_TEST_DIRNAME}/libs/bats-assert/load.bash"
 load "${BATS_TEST_DIRNAME}/libs/bats-file/load.bash"
+load "${BATS_TEST_DIRNAME}/libs/bats-mock/stub.bash"
 
 setup() {
   TEST_DIR="$(temp_make)"
   export TEST_DIR
+  export LINTERS_DIR="${BATS_TEST_DIRNAME}/../linters"
   cd "$TEST_DIR"
 }
 
 teardown() {
+  unstub rumdl 2>/dev/null || true
   temp_del "$TEST_DIR"
 }
 
-@test "markdown.sh check passes on valid markdown" {
-  skip_if_not_installed rumdl
-  
-  cat > test.md << 'EOF'
-# Test
-
-This is a test.
-EOF
-  
-  run -0 "${BATS_TEST_DIRNAME}/../linters/markdown.sh" check
-  
-  assert_success
-  assert_output --partial "MARKDOWN"
-}
-
-@test "markdown.sh handles missing rumdl gracefully" {
-  if command -v rumdl >/dev/null 2>&1; then
-    skip "rumdl is installed, cannot test missing tool behavior"
-  fi
-  
-  run -0 "${BATS_TEST_DIRNAME}/../linters/markdown.sh" check
-  
-  assert_success
-  assert_output --partial "not found in PATH"
-}
-
-@test "markdown.sh accepts check and fix actions" {
-  skip_if_not_installed rumdl
-  
+@test "markdown.sh check runs rumdl" {
   cat > test.md << 'EOF'
 # Test
 EOF
+  stub rumdl "check . --disable MD013 : true"
   
-  run "${BATS_TEST_DIRNAME}/../linters/markdown.sh" check
-  assert_output --partial "MARKDOWN"
+  run --separate-stderr "$LINTERS_DIR/markdown.sh" check
   
-  run "${BATS_TEST_DIRNAME}/../linters/markdown.sh" fix
-  assert_output --partial "MARKDOWN"
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_success
+  assert_output --partial "passed"
 }
 
-skip_if_not_installed() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    skip "$1 not installed"
-  fi
+@test "markdown.sh fix runs rumdl with --fix" {
+  cat > test.md << 'EOF'
+# Test
+EOF
+  stub rumdl "check --fix . --disable MD013 : true"
+  
+  run --separate-stderr "$LINTERS_DIR/markdown.sh" fix
+  
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_success
+  assert_output --partial "fixed"
 }

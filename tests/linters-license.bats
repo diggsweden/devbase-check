@@ -19,42 +19,24 @@ setup() {
 }
 
 teardown() {
-  unstub shellcheck 2>/dev/null || true
+  unstub reuse 2>/dev/null || true
   temp_del "$TEST_DIR"
 }
 
-@test "shell.sh runs shellcheck on shell files" {
-  cat > test.sh << 'EOF'
-#!/bin/bash
-echo "test"
-EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "true"
+@test "license.sh runs reuse lint" {
+  stub reuse "lint : true"
   
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/license.sh"
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "passed"
 }
 
-@test "shell.sh reports when no shell scripts exist" {
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+@test "license.sh fails when license issues found" {
+  stub reuse "lint : exit 1"
   
-  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
-  assert_success
-  assert_output --partial "No shell"
-}
-
-@test "shell.sh fails when shellcheck finds issues" {
-  cat > test.sh << 'EOF'
-#!/bin/bash
-echo "test"
-EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "exit 1"
-  
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/license.sh"
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_failure

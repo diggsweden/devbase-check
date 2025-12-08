@@ -19,43 +19,42 @@ setup() {
 }
 
 teardown() {
-  unstub shellcheck 2>/dev/null || true
+  unstub shfmt 2>/dev/null || true
   temp_del "$TEST_DIR"
 }
 
-@test "shell.sh runs shellcheck on shell files" {
+@test "shell-fmt.sh check runs shfmt" {
   cat > test.sh << 'EOF'
 #!/bin/bash
 echo "test"
 EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "true"
+  stub_repeated shfmt "true"
   
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/shell-fmt.sh" check
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "passed"
 }
 
-@test "shell.sh reports when no shell scripts exist" {
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
-  
-  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
-  assert_success
-  assert_output --partial "No shell"
-}
-
-@test "shell.sh fails when shellcheck finds issues" {
+@test "shell-fmt.sh fix formats shell scripts" {
   cat > test.sh << 'EOF'
 #!/bin/bash
 echo "test"
 EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "exit 1"
+  stub_repeated shfmt "true"
   
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/shell-fmt.sh" fix
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
-  assert_failure
+  assert_success
+  assert_output --partial "formatted"
+}
+
+@test "shell-fmt.sh reports when no scripts exist" {
+  run --separate-stderr "$LINTERS_DIR/shell-fmt.sh" check
+  
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_success
+  assert_output --partial "No shell"
 }

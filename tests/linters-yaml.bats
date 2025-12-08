@@ -4,77 +4,70 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Tests for linters/yaml.sh
-
 bats_require_minimum_version 1.13.0
 
 load "${BATS_TEST_DIRNAME}/libs/bats-support/load.bash"
 load "${BATS_TEST_DIRNAME}/libs/bats-assert/load.bash"
 load "${BATS_TEST_DIRNAME}/libs/bats-file/load.bash"
+load "${BATS_TEST_DIRNAME}/libs/bats-mock/stub.bash"
 
 setup() {
   TEST_DIR="$(temp_make)"
   export TEST_DIR
+  export LINTERS_DIR="${BATS_TEST_DIRNAME}/../linters"
   cd "$TEST_DIR"
 }
 
 teardown() {
+  unstub yamlfmt 2>/dev/null || true
   temp_del "$TEST_DIR"
 }
 
-@test "yaml.sh check passes on valid YAML" {
-  skip_if_not_installed yamlfmt
-  
-  cat > test.yaml << 'EOF'
-key: value
-list:
-  - item1
-  - item2
-EOF
-  
-  run -0 "${BATS_TEST_DIRNAME}/../linters/yaml.sh" check
-  
-  assert_success
-  assert_output --partial "YAML"
-}
-
-@test "yaml.sh handles missing yamlfmt gracefully" {
-  if command -v yamlfmt >/dev/null 2>&1; then
-    skip "yamlfmt is installed, cannot test missing tool behavior"
-  fi
-  
-  run -0 "${BATS_TEST_DIRNAME}/../linters/yaml.sh" check
-  
-  assert_success
-  assert_output --partial "not found in PATH"
-}
-
-@test "yaml.sh accepts check and fix actions" {
-  skip_if_not_installed yamlfmt
-  
+@test "yaml.sh check succeeds when yamlfmt passes" {
   cat > test.yaml << 'EOF'
 key: value
 EOF
+  stub yamlfmt "-lint . : true"
   
-  run "${BATS_TEST_DIRNAME}/../linters/yaml.sh" check
-  assert_output --partial "YAML"
+  run --separate-stderr "$LINTERS_DIR/yaml.sh" check
   
-  run "${BATS_TEST_DIRNAME}/../linters/yaml.sh" fix
-  assert_output --partial "YAML"
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_success
+  assert_output --partial "passed"
 }
 
-@test "yaml.sh rejects unknown actions" {
-  skip_if_not_installed yamlfmt
+@test "yaml.sh check fails when yamlfmt finds issues" {
+  cat > test.yaml << 'EOF'
+key: value
+EOF
+  stub yamlfmt "-lint . : exit 1"
   
-  run -1 "${BATS_TEST_DIRNAME}/../linters/yaml.sh" invalid
+  run --separate-stderr "$LINTERS_DIR/yaml.sh" check
   
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_failure
-  assert_output --partial "Unknown action"
+  [[ "$stderr" == *"failed"* ]] || [[ "$output" == *"failed"* ]]
 }
 
-# Helper function
-skip_if_not_installed() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    skip "$1 not installed"
-  fi
+@test "yaml.sh fix formats files" {
+  cat > test.yaml << 'EOF'
+key: value
+EOF
+  stub yamlfmt ". : true"
+  
+  run --separate-stderr "$LINTERS_DIR/yaml.sh" fix
+  
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_success
+  assert_output --partial "formatted"
+}
+
+@test "yaml.sh rejects unknown action" {
+  stub yamlfmt ""
+  
+  run --separate-stderr "$LINTERS_DIR/yaml.sh" invalid
+  
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_failure
+  [[ "$stderr" == *"Unknown action"* ]] || [[ "$output" == *"Unknown action"* ]]
 }

@@ -19,43 +19,34 @@ setup() {
 }
 
 teardown() {
-  unstub shellcheck 2>/dev/null || true
+  unstub actionlint 2>/dev/null || true
   temp_del "$TEST_DIR"
 }
 
-@test "shell.sh runs shellcheck on shell files" {
-  cat > test.sh << 'EOF'
-#!/bin/bash
-echo "test"
+@test "github-actions.sh runs actionlint when workflows exist" {
+  mkdir -p .github/workflows
+  cat > .github/workflows/test.yml << 'EOF'
+name: Test
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo test
 EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "true"
+  stub_repeated actionlint "true"
   
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/github-actions.sh"
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "passed"
 }
 
-@test "shell.sh reports when no shell scripts exist" {
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+@test "github-actions.sh skips when no workflows exist" {
+  run --separate-stderr "$LINTERS_DIR/github-actions.sh"
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
-  assert_output --partial "No shell"
-}
-
-@test "shell.sh fails when shellcheck finds issues" {
-  cat > test.sh << 'EOF'
-#!/bin/bash
-echo "test"
-EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "exit 1"
-  
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
-  
-  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
-  assert_failure
+  assert_output --partial "No GitHub"
 }

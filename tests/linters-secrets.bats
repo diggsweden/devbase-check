@@ -16,45 +16,28 @@ setup() {
   export TEST_DIR
   export LINTERS_DIR="${BATS_TEST_DIRNAME}/../linters"
   cd "$TEST_DIR"
+  git init -q
 }
 
 teardown() {
-  unstub shellcheck 2>/dev/null || true
+  unstub gitleaks 2>/dev/null || true
   temp_del "$TEST_DIR"
 }
 
-@test "shell.sh runs shellcheck on shell files" {
-  cat > test.sh << 'EOF'
-#!/bin/bash
-echo "test"
-EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "true"
+@test "secrets.sh runs gitleaks" {
+  stub_repeated gitleaks "true"
   
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/secrets.sh"
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
-  assert_output --partial "passed"
+  assert_output --partial "No secrets"
 }
 
-@test "shell.sh reports when no shell scripts exist" {
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+@test "secrets.sh fails when secrets detected" {
+  stub_repeated gitleaks "exit 1"
   
-  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
-  assert_success
-  assert_output --partial "No shell"
-}
-
-@test "shell.sh fails when shellcheck finds issues" {
-  cat > test.sh << 'EOF'
-#!/bin/bash
-echo "test"
-EOF
-  chmod +x test.sh
-  stub_repeated shellcheck "exit 1"
-  
-  run --separate-stderr "$LINTERS_DIR/shell.sh"
+  run --separate-stderr "$LINTERS_DIR/secrets.sh"
   
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_failure

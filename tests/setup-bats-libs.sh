@@ -4,40 +4,58 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Install BATS helper libraries for testing
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIBS_DIR="${SCRIPT_DIR}/libs"
 
-mkdir -p "$LIBS_DIR"
+declare -A BATS_LIBS_URL=(
+  ["bats-support"]="https://github.com/bats-core/bats-support.git"
+  ["bats-assert"]="https://github.com/bats-core/bats-assert.git"
+  ["bats-file"]="https://github.com/bats-core/bats-file.git"
+  ["bats-mock"]="https://github.com/jasonkarns/bats-mock.git"
+)
 
-# Clone or update bats-support
-if [[ -d "${LIBS_DIR}/bats-support" ]]; then
-  echo "Updating bats-support..."
-  git -C "${LIBS_DIR}/bats-support" pull --quiet
-else
-  echo "Installing bats-support..."
-  git clone --depth 1 --branch v0.3.0 https://github.com/bats-core/bats-support.git "${LIBS_DIR}/bats-support"
-fi
+declare -A BATS_LIBS_VERSION=(
+  ["bats-support"]="v0.3.0"
+  ["bats-assert"]="v2.1.0"
+  ["bats-file"]="v0.4.0"
+  ["bats-mock"]=""
+)
 
-# Clone or update bats-assert
-if [[ -d "${LIBS_DIR}/bats-assert" ]]; then
-  echo "Updating bats-assert..."
-  git -C "${LIBS_DIR}/bats-assert" pull --quiet
-else
-  echo "Installing bats-assert..."
-  git clone --depth 1 --branch v2.1.0 https://github.com/bats-core/bats-assert.git "${LIBS_DIR}/bats-assert"
-fi
+ensure_libs_dir() {
+  mkdir -p "$LIBS_DIR"
+}
 
-# Clone or update bats-file
-if [[ -d "${LIBS_DIR}/bats-file" ]]; then
-  echo "Updating bats-file..."
-  git -C "${LIBS_DIR}/bats-file" pull --quiet
-else
-  echo "Installing bats-file..."
-  git clone --depth 1 --branch v0.4.0 https://github.com/bats-core/bats-file.git "${LIBS_DIR}/bats-file"
-fi
+install_lib() {
+  local name="$1"
+  local url="${BATS_LIBS_URL[$name]}"
+  local version="${BATS_LIBS_VERSION[$name]}"
+  local target_dir="${LIBS_DIR}/${name}"
 
-echo "✓ BATS libraries installed in ${LIBS_DIR}"
+  if [[ -d "$target_dir" ]]; then
+    echo "Updating ${name}..."
+    git -C "$target_dir" pull --quiet
+  else
+    echo "Installing ${name}..."
+    if [[ -n "$version" ]]; then
+      git clone --depth 1 --branch "$version" "$url" "$target_dir"
+    else
+      git clone --depth 1 "$url" "$target_dir"
+    fi
+  fi
+}
+
+install_all_libs() {
+  for name in "${!BATS_LIBS_URL[@]}"; do
+    install_lib "$name"
+  done
+}
+
+main() {
+  ensure_libs_dir
+  install_all_libs
+  echo "BATS libraries installed in ${LIBS_DIR}"
+}
+
+main "$@"

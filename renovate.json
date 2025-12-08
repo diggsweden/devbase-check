@@ -62,12 +62,25 @@
       "managerFilePatterns": [
         "/tests/setup-bats-libs\\.sh$/"
       ],
-      "description": "Update BATS helper library versions",
+      "description": "Update BATS helper library versions (bats-core)",
       "matchStrings": [
-        "git clone --depth 1 --branch (?<currentValue>v[0-9.]+) https://github.com/bats-core/(?<depName>bats-[a-z]+)\\.git"
+        "\\[\"(?<depName>bats-support|bats-assert|bats-file)\"\\]=\"(?<currentValue>v[0-9.]+)\""
       ],
       "datasourceTemplate": "github-tags",
       "packageNameTemplate": "bats-core/{{{depName}}}",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/tests/setup-bats-libs\\.sh$/"
+      ],
+      "description": "Update bats-mock version",
+      "matchStrings": [
+        "\\[\"(?<depName>bats-mock)\"\\]=\"(?<currentValue>v[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "jasonkarns/{{{depName}}}",
       "versioningTemplate": "semver"
     },
     {

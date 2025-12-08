@@ -16,6 +16,13 @@ find_shell_scripts() {
     2>/dev/null
 }
 
+find_bats_files() {
+  find . -type f -name "*.bats" \
+    -not -path "./.git/*" \
+    -not -path "./tests/libs/*" \
+    2>/dev/null
+}
+
 main() {
   print_header "SHELL SCRIPT LINTING (SHELLCHECK)"
 
@@ -33,7 +40,22 @@ main() {
     return 0
   fi
 
-  if echo "$scripts" | xargs -r shellcheck --severity=info --exclude=SC1091,SC2034,SC2155; then
+  local failed=0
+  if ! echo "$scripts" | xargs -r shellcheck --severity=info --exclude=SC1091,SC2034,SC2155; then
+    failed=1
+  fi
+
+  local bats_files
+  bats_files=$(find_bats_files)
+
+  if [[ -n "$bats_files" ]]; then
+    print_info "Checking bats test files..."
+    if ! echo "$bats_files" | xargs -r shellcheck --shell=bats --severity=info --exclude=SC1091,SC2034,SC2155,SC2164; then
+      failed=1
+    fi
+  fi
+
+  if [[ $failed -eq 0 ]]; then
     print_success "Shell script linting passed"
     return 0
   else
