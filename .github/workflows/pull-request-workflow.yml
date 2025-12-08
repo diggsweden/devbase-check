@@ -27,7 +27,6 @@ jobs:
       linters.licenselint: false
       linters.megalint: false
       linters.publiccodelint: false
-
   test:
     runs-on: ubuntu-latest
     steps:

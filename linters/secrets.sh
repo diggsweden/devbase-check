@@ -13,10 +13,6 @@ get_default_branch() {
   git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed "s@^refs/remotes/origin/@@" || echo "main"
 }
 
-run_gitleaks() {
-  gitleaks detect --source=. --verbose --redact=50
-}
-
 main() {
   print_header "SECRET SCANNING (GITLEAKS)"
 
@@ -30,13 +26,18 @@ main() {
   default_branch=$(get_default_branch)
   current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
+  local gitleaks_result
   if [[ "$current_branch" == "$default_branch" ]]; then
     print_info "On default branch, scanning all commits..."
+    gitleaks detect --source=. --verbose --redact=50
+    gitleaks_result=$?
   else
     print_info "Scanning commits different from ${default_branch}..."
+    gitleaks detect --source=. --log-opts="${default_branch}..HEAD" --verbose --redact=50
+    gitleaks_result=$?
   fi
 
-  if run_gitleaks; then
+  if [[ $gitleaks_result -eq 0 ]]; then
     print_success "No secrets found"
     return 0
   else
