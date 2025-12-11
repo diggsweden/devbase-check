@@ -28,6 +28,8 @@ get_latest_version() {
 update_to_version() {
   local version="$1"
   git -C "$DIR" fetch --all --quiet
+  # Stash any local changes to avoid checkout conflicts
+  git -C "$DIR" stash --quiet 2>/dev/null || true
   git -C "$DIR" checkout "$version" --quiet
   print_success "Updated to $version"
 }
