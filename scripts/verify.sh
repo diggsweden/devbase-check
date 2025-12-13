@@ -67,7 +67,11 @@ run_linters() {
     # Parse status from output
     local status details
     if [[ $exit_code -eq 0 ]]; then
-      if grep -q "not found in PATH" <<<"$output"; then
+      if [[ -z "${output// /}" ]]; then
+        # Empty output = linter disabled, skip entirely
+        status="disabled"
+        details=""
+      elif grep -q "not found in PATH" <<<"$output"; then
         status="skip"
         details="not in PATH"
       elif grep -qiE "Skipping|Skip" <<<"$output"; then
@@ -103,6 +107,9 @@ print_summary() {
   for linter_def in "${LINTERS[@]}"; do
     IFS='|' read -r check_name tool _ <<<"$linter_def"
     IFS='|' read -r status real_tool raw_details <<<"${RESULTS[$check_name]}"
+
+    # Skip disabled linters entirely
+    [[ "$status" == "disabled" ]] && continue
 
     # Format status icon
     local icon plain

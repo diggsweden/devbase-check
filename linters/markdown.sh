@@ -15,6 +15,17 @@ readonly DISABLE="${1:-MD013}"
 
 readonly EXCLUDE=".github-shared,node_modules,vendor,target,CHANGELOG.md"
 
+find_markdown_files() {
+  find . -type f -name "*.md" \
+    -not -path "./.git/*" \
+    -not -path "./target/*" \
+    -not -path "./node_modules/*" \
+    -not -path "./vendor/*" \
+    -not -path "./.github-shared/*" \
+    -not -name "CHANGELOG.md" \
+    2>/dev/null
+}
+
 check_markdown() {
   local args=(check . --exclude "$EXCLUDE")
   [[ -n "$DISABLE" ]] && args+=(--disable "$DISABLE")
@@ -41,6 +52,14 @@ fix_markdown() {
 
 main() {
   print_header "MARKDOWN LINTING (RUMDL)"
+
+  local files
+  files=$(find_markdown_files)
+
+  if [[ -z "$files" ]]; then
+    print_info "No Markdown files found to check"
+    return 0
+  fi
 
   if ! command -v rumdl >/dev/null 2>&1; then
     print_warning "rumdl not found in PATH - skipping markdown linting"

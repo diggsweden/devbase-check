@@ -13,20 +13,20 @@ SPDX-License-Identifier: CC0-1.0
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/diggsweden/devbase-justkit/badge?style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/diggsweden/devbase-justkit)
 
-Reusable linting scripts for [Just](https://github.com/casey/just) task runner. Install once to `~/.local/share/devbase-justkit`, use across multiple projects.
+Reusable linting for [Just](https://github.com/casey/just) task runner. Install once, use across multiple projects.
 
 ## What it does
 
-- Runs 10+ linters (shellcheck, yamlfmt, gitleaks, etc.) with one command
-- Skip what you don't need - no XML files? No XML linting
+- Runs linters (shellcheck, yamlfmt, gitleaks, etc.) with one command
+- Skips what you don't need - no XML files? No XML linting
 - Add language-specific linters (Java, Node/TypeScript) on top
 - Centralized linting - update once, affects all projects
 - No copy-paste of linter scripts and configs between projects
 
 ## Requirements
 
-- [Just](https://github.com/casey/just) - task runner (install: `cargo install just` or see [Just installation](https://github.com/casey/just#installation))
-- [mise](https://mise.jdx.dev/) - tool version manager (install: `curl https://mise.run | sh` or see [mise installation](https://mise.jdx.dev/getting-started.html))
+- [Just](https://github.com/casey/just) - task runner
+- [mise](https://mise.jdx.dev/) - tool version manager
 - Git
 
 ## Quick Start
@@ -43,24 +43,25 @@ Reusable linting scripts for [Just](https://github.com/casey/just) task runner. 
    just lint-all        # Runs all linters
    ```
 
-That's it. The justfile calls scripts from `~/.local/share/devbase-justkit`.
+That's it.
 
 ### Updates
 
 Run `just setup-devtools` again to check for updates:
 
-- **Interactive**: Prompts "Update available: v1.2.3. Update? [y/N]"
+- **Interactive**: Prompts "Update available: vX.Y.Z. Update? [y/N]"
 - **CI/non-interactive**: Auto-updates to latest tag
 
 ## How it works
 
 You get base linters for free. Add language-specific linters if needed.
+Disable base linters you dont want.
 
 ![lint-base composition](assets/lintbase.png)
 
-- **`lint-base`** - 10 linters that work on any project (YAML, shell, secrets, etc.)
+- **`lint-base`** - General inters that work on most project (YAML, shell, secrets, etc.)
 - **`lint-all`** - Uses `lint-base`, override to add Java/Node/Python linters
-- **Individual recipes** - Run `just lint-yaml` or `just lint-shell` separately
+- **Individual recipes** - Run them seperatly, example `just lint-yaml` or `just lint-shell`.
 
 ### Base Linters
 
@@ -68,12 +69,12 @@ Run on every project. Skip automatically if no relevant files found:
 
 | Recipe | Tool | Checks | Skips when |
 |--------|------|--------|------------|
-| `lint-commits` | conform | Commit message format | No commits to check |
-| `lint-secrets` | gitleaks | Secrets/credentials | Never (scans all) |
-| `lint-yaml` | yamlfmt | YAML formatting | Never (scans all) |
-| `lint-markdown` | rumdl | Markdown style | Never (scans all) |
-| `lint-shell` | shellcheck | Shell script bugs | No .sh files |
-| `lint-shell-fmt` | shfmt | Shell formatting | No .sh files |
+| `lint-commits` | conform | Commit message format | On default branch or no new commits |
+| `lint-secrets` | gitleaks | Secrets/credentials | Never (scans commits) |
+| `lint-yaml` | yamlfmt | YAML formatting | No .yml/.yaml files |
+| `lint-markdown` | rumdl | Markdown style | No .md files |
+| `lint-shell` | shellcheck | Shell script bugs | No .sh/.bash files |
+| `lint-shell-fmt` | shfmt | Shell formatting | No .sh/.bash files |
 | `lint-actions` | actionlint | GitHub Actions syntax | No .github/workflows/ |
 | `lint-license` | reuse | License compliance | Never (scans all) |
 | `lint-container` | hadolint | Dockerfile best practices | No Containerfile/Dockerfile |
@@ -105,33 +106,46 @@ Run on every project. Skip automatically if no relevant files found:
 
 ## Add language-specific linters
 
-Override `lint-all` in your justfile to add Java, Node, Python, etc.:
+Add language-specific recipes to your justfile. The `verify.sh` script (called by `just verify`) **automatically detects** recipes with these names and includes them in the summary:
+
+- Java: `lint-java-checkstyle`, `lint-java-pmd`, `lint-java-spotbugs`
+- Node: `lint-node-eslint`, `lint-node-format`, `lint-node-ts-types`
+
+No need to override `lint-all` - just define the recipes and they're picked up automatically.
 
 ### Java/Maven Project
 
 ```just
 java_lint := devtools_dir + "/linters/java"
 
-# Run all linters with summary (automatically detects Java linters)
-lint-all: _ensure-devtools
-    @{{devtools_dir}}/scripts/verify.sh
-
 # Run all Java linters together (convenience command)
+[group('lint')]
 lint-java:
     @{{java_lint}}/lint.sh
 
 # Individual Java linters (auto-detected by verify.sh)
+[group('lint')]
 lint-java-checkstyle:
     @{{java_lint}}/checkstyle.sh
 
+[group('lint')]
 lint-java-pmd:
     @{{java_lint}}/pmd.sh
 
+[group('lint')]
 lint-java-spotbugs:
     @{{java_lint}}/spotbugs.sh
+
+[group('lint')]
+lint-java-fmt:
+    @{{java_lint}}/format.sh check
+
+[group('fix')]
+lint-java-fmt-fix:
+    @{{java_lint}}/format.sh fix
 ```
 
-When you run `just lint-all` or `just verify`, the verify script automatically detects `lint-java-checkstyle`, `lint-java-pmd`, and `lint-java-spotbugs` recipes and runs them individually with a summary table. You can also run `just lint-java` to execute all Java linters together.
+When you run `just verify`, the verify script automatically detects `lint-java-checkstyle`, `lint-java-pmd`, and `lint-java-spotbugs` recipes and includes them in the summary table. You can also run `just lint-java` to execute all Java linters together.
 
 See [`examples/java-justfile`](examples/java-justfile) for a complete example.
 
@@ -140,85 +154,54 @@ See [`examples/java-justfile`](examples/java-justfile) for a complete example.
 ```just
 node_lint := devtools_dir + "/linters/node"
 
-# Run all linters with summary (automatically detects Node linters)
-lint-all: _ensure-devtools
-    @{{devtools_dir}}/scripts/verify.sh
-
 # Run all Node linters together (convenience command)
+[group('lint')]
 lint-node:
     @{{node_lint}}/lint.sh
 
 # Individual Node linters (auto-detected by verify.sh)
+[group('lint')]
 lint-node-eslint:
     @{{node_lint}}/eslint.sh
 
+[group('lint')]
 lint-node-format:
     @{{node_lint}}/format.sh check
 
+[group('lint')]
 lint-node-ts-types:
     @{{node_lint}}/types.sh
+
+[group('fix')]
+lint-node-format-fix:
+    @{{node_lint}}/format.sh fix
 ```
 
-When you run `just lint-all` or `just verify`, the verify script automatically detects `lint-node-*` recipes and runs them individually with a summary table. You can also run `just lint-node` to execute all Node linters together.
+When you run `just verify`, the verify script automatically detects `lint-node-*` recipes and includes them in the summary table. You can also run `just lint-node` to execute all Node linters together.
 
 See [`examples/node-justfile`](examples/node-justfile) for a complete example.
-
-### Python Project
-
-```just
-# Extend base linters with Python linters
-lint-all: _ensure-devtools lint-python
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just --justfile {{devtools_dir}}/justfile lint-base
-    just_success "All linting checks completed"
-
-lint-python:
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just_header "Python Linting" "ruff check"
-    ruff check .
-    ruff format --check .
-    just_success "Python linting passed"
-```
 
 ### Go Project
 
 ```just
-# Extend base linters with Go linters
-lint-all: _ensure-devtools lint-go
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just --justfile {{devtools_dir}}/justfile lint-base
-    just_success "All linting checks completed"
-
+# Go linter (add to verify.sh detection if needed)
+[group('lint')]
 lint-go:
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just_header "Go Linting" "golangci-lint run"
     go vet ./...
     golangci-lint run
-    just_success "Go linting passed"
 ```
 
 ### Rust Project
 
 ```just
-# Extend base linters with Rust linters
-lint-all: _ensure-devtools lint-rust
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just --justfile {{devtools_dir}}/justfile lint-base
-    just_success "All linting checks completed"
-
+# Rust linters (add to verify.sh detection if needed)
+[group('lint')]
 lint-rust:
-    #!/usr/bin/env bash
-    source "{{colors}}"
-    just_header "Rust Linting" "cargo clippy"
     cargo fmt --check
     cargo clippy -- -D warnings
-    just_success "Rust linting passed"
 ```
+
+> **Note:** Go and Rust linters are not auto-detected by `verify.sh` yet. You can add detection in `scripts/verify.sh` following the Java/Node pattern, or run them separately with `just lint-go` / `just lint-rust`.
 
 ### Minimal Project (base linters only)
 
@@ -239,10 +222,6 @@ lint-all: _ensure-devtools
 lint-java-checkstyle:
     @{{java_lint}}/checkstyle.sh
 
-# Python linters  
-lint-python:
-    ruff check .
-
 # Node linters
 lint-node-eslint:
     @{{node_lint}}/eslint.sh
@@ -254,25 +233,31 @@ All defined `lint-*` recipes are automatically detected and included in the summ
 
 You can override any linter recipe in your project's justfile to customize behavior or skip checks.
 
-### Skip a Linter
+### Disable or Skip a Linter
 
-To skip a linter completely, override the recipe and output a message containing "Skip" or "Skipping". The verify script will mark it as skipped (yellow `-`) in the summary:
+Two options to disable a linter:
+
+**Option 1: Hide completely** - empty recipe (no output), linter won't appear in summary:
 
 ```just
-# Skip license compliance checks
+[group('lint')]
 lint-license:
-    @echo "Skipping license check"
+```
 
-# Skip a Java linter
-lint-java-checkstyle:
-    @echo "Skipping Checkstyle"
+**Option 2: Show as skipped** - output message containing "Skip", shown as skipped in summary:
+
+```just
+[group('lint')]
+lint-license:
+    @echo "Skipping license check - not required for this project"
 ```
 
 **Result in summary:**
 
 ```text
+# Option 1: not shown at all
+# Option 2:
 License                reuse         -  skipped
-Java Checkstyle        checkstyle    -  skipped
 ```
 
 ### Customize a Linter

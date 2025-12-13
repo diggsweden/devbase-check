@@ -27,7 +27,8 @@ get_latest_version() {
 
 update_to_version() {
   local version="$1"
-  git -C "$DIR" fetch --all --quiet
+  # Fetch only the specific tag, shallow
+  git -C "$DIR" fetch --depth 1 origin tag "$version" --quiet
   # Stash any local changes to avoid checkout conflicts
   git -C "$DIR" stash --quiet 2>/dev/null || true
   git -C "$DIR" checkout "$version" --quiet
@@ -38,7 +39,7 @@ clone_repo() {
   print_info "Cloning devbase-justkit to $DIR..."
   mkdir -p "$(dirname "$DIR")"
   git clone --depth 1 "$REPO" "$DIR" --quiet
-  git -C "$DIR" fetch --tags --quiet
+  git -C "$DIR" fetch --tags --depth 1 --quiet
 
   local latest
   latest=$(get_latest_version)
@@ -71,7 +72,11 @@ check_for_updates() {
 
 main() {
   if [[ -d "$DIR" ]]; then
-    git -C "$DIR" fetch --tags --quiet
+    # Try to fetch tags only (shallow), but don't fail if network is unavailable
+    if ! git -C "$DIR" fetch --tags --depth 1 --quiet 2>/dev/null; then
+      print_warning "Could not check for updates (no network connection)"
+      return 0
+    fi
     check_for_updates "$(get_current_version)" "$(get_latest_version)"
   else
     clone_repo

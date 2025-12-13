@@ -14,6 +14,15 @@ readonly ACTION="${1:-check}"
 # Default config with standard exclusions
 readonly DEFAULT_CONFIG="${SCRIPT_DIR}/config/.yamlfmt"
 
+find_yaml_files() {
+  find . -type f \( -name "*.yml" -o -name "*.yaml" \) \
+    -not -path "./.git/*" \
+    -not -path "./target/*" \
+    -not -path "./node_modules/*" \
+    -not -path "./vendor/*" \
+    2>/dev/null
+}
+
 get_config_flag() {
   # If project has its own config, use default behavior; otherwise use our default
   if [[ ! -f ".yamlfmt" && ! -f "yamlfmt.yml" && ! -f "yamlfmt.yaml" && -f "${DEFAULT_CONFIG}" ]]; then
@@ -49,6 +58,14 @@ fix_yaml() {
 
 main() {
   print_header "YAML LINTING (YAMLFMT)"
+
+  local files
+  files=$(find_yaml_files)
+
+  if [[ -z "$files" ]]; then
+    print_info "No YAML files found to check"
+    return 0
+  fi
 
   if ! command -v yamlfmt >/dev/null 2>&1; then
     print_warning "yamlfmt not found in PATH - skipping YAML linting"
