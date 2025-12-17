@@ -67,3 +67,96 @@ EOF
   
   assert_output --regexp "[0-9]+ passed"
 }
+
+# =============================================================================
+# CI Environment Detection Tests
+# =============================================================================
+
+@test "detect_ci_environment returns github when GITHUB_STEP_SUMMARY set" {
+  source "${DEVTOOLS_ROOT}/summary/common.sh"
+  
+  export GITHUB_STEP_SUMMARY="/tmp/test-summary.md"
+  unset CI_JOB_URL
+  unset GITEA_ACTIONS
+  
+  run detect_ci_environment
+  assert_output "github"
+}
+
+@test "detect_ci_environment returns gitlab when CI_JOB_URL set" {
+  source "${DEVTOOLS_ROOT}/summary/common.sh"
+  
+  unset GITHUB_STEP_SUMMARY
+  export CI_JOB_URL="https://gitlab.com/job/123"
+  unset GITEA_ACTIONS
+  
+  run detect_ci_environment
+  assert_output "gitlab"
+}
+
+@test "detect_ci_environment returns codeberg when GITEA_ACTIONS set" {
+  source "${DEVTOOLS_ROOT}/summary/common.sh"
+  
+  unset GITHUB_STEP_SUMMARY
+  unset CI_JOB_URL
+  export GITEA_ACTIONS="true"
+  
+  run detect_ci_environment
+  assert_output "codeberg"
+}
+
+@test "detect_ci_environment returns console when no CI env vars set" {
+  source "${DEVTOOLS_ROOT}/summary/common.sh"
+  
+  unset GITHUB_STEP_SUMMARY
+  unset CI_JOB_URL
+  unset GITEA_ACTIONS
+  
+  run detect_ci_environment
+  assert_output "console"
+}
+
+@test "load_summary_module loads github module when detected" {
+  source "${DEVTOOLS_ROOT}/summary/common.sh"
+  
+  export GITHUB_STEP_SUMMARY="${TEST_DIR}/summary.md"
+  
+  load_summary_module
+  
+  # Verify github module functions are available
+  declare -f summary_init | grep -q "_GH_"
+}
+
+@test "load_summary_module loads console module as fallback" {
+  source "${DEVTOOLS_ROOT}/summary/common.sh"
+  
+  unset GITHUB_STEP_SUMMARY
+  unset CI_JOB_URL
+  unset GITEA_ACTIONS
+  
+  load_summary_module
+  
+  # Verify console module functions are available
+  declare -f summary_init | grep -q "_CONSOLE_"
+}
+
+@test "verify.sh generates GitHub summary when GITHUB_STEP_SUMMARY set" {
+  export GITHUB_STEP_SUMMARY="${TEST_DIR}/github-summary.md"
+  
+  cat > justfile << 'EOF'
+# SPDX-FileCopyrightText: 2025 Test
+# SPDX-License-Identifier: MIT
+default:
+    @echo "test"
+EOF
+  
+  run "$SCRIPT_DIR/verify.sh"
+  
+  # Should create summary file
+  assert_file_exists "$GITHUB_STEP_SUMMARY"
+  
+  # Summary should contain markdown table
+  run cat "$GITHUB_STEP_SUMMARY"
+  assert_output --partial "Linting Results"
+  assert_output --partial "| Linter | Tool | Status | Details |"
+}

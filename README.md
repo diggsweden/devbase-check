@@ -375,6 +375,40 @@ The justfile picks this up automatically:
 devtools_repo := env("DEVBASE_CHECK_REPO", "https://github.com/diggsweden/devbase-check")
 ```
 
+## CI Integration
+
+The `verify.sh` script automatically detects the CI environment and adjusts output accordingly:
+
+| Environment | Detection | Output |
+|-------------|-----------|--------|
+| **Local/Console** | No CI env vars | Colored table in terminal |
+| **GitHub Actions** | `GITHUB_STEP_SUMMARY` set | Markdown summary in Actions UI |
+| **GitLab CI** | `CI_JOB_URL` set | Console output (fallback) |
+| **Codeberg/Gitea** | `GITEA_ACTIONS` set | Console output (fallback) |
+
+### GitHub Actions
+
+When running in GitHub Actions, results appear in the job summary with:
+
+- Markdown table showing each linter's status
+- Expandable error details for failed linters
+- Pass/fail/skip counts
+
+No configuration needed - detection is automatic.
+
+### Using with reusable-ci
+
+If using [reusable-ci](https://github.com/diggsweden/reusable-ci), enable devbase-check in your workflow:
+
+```yaml
+jobs:
+  lint:
+    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@main
+    with:
+      project-type: maven
+      linters.devbasecheck: true
+```
+
 ## Directory Structure
 
 ```text
@@ -410,6 +444,10 @@ devbase-check/
 │   ├── check-tools.sh
 │   ├── setup.sh
 │   └── verify.sh
+├── summary/
+│   ├── common.sh              # CI environment detection
+│   ├── console.sh             # Terminal output (colored table)
+│   └── github.sh              # GitHub Actions markdown summary
 ├── utils/
 │   └── colors.sh
 ├── examples/

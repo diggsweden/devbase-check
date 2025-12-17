@@ -8,8 +8,12 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LINTERS_DIR="${SCRIPT_DIR}/../linters"
+
 # shellcheck source=../utils/colors.sh
 source "${SCRIPT_DIR}/../utils/colors.sh"
+
+# shellcheck source=../summary/common.sh
+source "${SCRIPT_DIR}/../summary/common.sh"
 
 # Base linters
 LINTERS=(
@@ -26,6 +30,7 @@ LINTERS=(
 )
 
 declare -A RESULTS
+declare -A OUTPUTS
 
 detect_language_linters() {
   local recipes
@@ -64,6 +69,9 @@ run_linters() {
     output=$(eval "$cmd" 2>&1) || exit_code=$?
     echo "$output"
 
+    # Store output for summary module
+    OUTPUTS["$check"]="$output"
+
     # Parse status from output
     local status details
     if [[ $exit_code -eq 0 ]]; then
@@ -100,10 +108,24 @@ run_linters() {
 print_summary() {
   local passed=0 skipped=0 na=0 failed=0
 
-  printf "\n%-22s %-12s\n" "Check" "Tool"
-  printf "%.0s-" {1..45}
-  printf "\n"
+  # Count results first
+  for linter_def in "${LINTERS[@]}"; do
+    IFS='|' read -r check_name _ _ <<<"$linter_def"
+    IFS='|' read -r status _ _ <<<"${RESULTS[$check_name]}"
 
+    case "$status" in
+    pass) ((passed++)) ;;
+    skip) ((skipped++)) ;;
+    n/a) ((na++)) ;;
+    fail) ((failed++)) ;;
+    esac
+  done
+
+  # Initialize summary module
+  local total=$((passed + failed + skipped + na))
+  summary_init "$total"
+
+  # Add results to summary module
   for linter_def in "${LINTERS[@]}"; do
     IFS='|' read -r check_name tool _ <<<"$linter_def"
     IFS='|' read -r status real_tool raw_details <<<"${RESULTS[$check_name]}"
@@ -111,75 +133,23 @@ print_summary() {
     # Skip disabled linters entirely
     [[ "$status" == "disabled" ]] && continue
 
-    # Format status icon
-    local icon plain
-    case "$status" in
-    pass)
-      # shellcheck disable=SC2153
-      icon="${GREEN}${CHECK}${NC}"
-      plain="✓"
-      ((passed++))
-      ;;
-    skip)
-      icon="${YELLOW}-${NC}"
-      plain="-"
-      ((skipped++))
-      ;;
-    n/a)
-      icon="${CYAN}-${NC}"
-      plain="-"
-      ((na++))
-      ;;
-    fail)
-      # shellcheck disable=SC2153
-      icon="${RED}${CROSS}${NC}"
-      plain="✗"
-      ((failed++))
-      ;;
-    esac
+    # Get output for this linter (for error details in GitHub summary)
+    local output="${OUTPUTS[$check_name]:-}"
 
-    # Only show meaningful details
-    local details=""
-    case "$status" in
-    skip) details="$raw_details" ;;
-    n/a) [[ $raw_details != "n/a" ]] && details="$raw_details" ;;
-    pass | fail)
-      if [[ $raw_details =~ [0-9]+\ commit ]]; then
-        details="$raw_details"
-      fi
-      ;;
-    esac
-
-    # Center icon in 5-char column
-    local pad=$(((5 - ${#plain}) / 2))
-    local right_pad=$((5 - ${#plain} - pad))
-
-    printf "%-22s %b%-12s%b%*s%b%*s%-30s\n" \
-      "$check_name" "${DIM}" "$real_tool" "${NC}" "$pad" "" "$icon" "$right_pad" "" "$details"
+    summary_add_result "$check_name" "$real_tool" "$status" "0" "$raw_details" "$output"
   done
 
-  printf "%.0s-" {1..45}
-  printf "\n\n"
+  # Finalize summary
+  summary_finalize "$total" "$passed" "$failed" "$skipped"
+  local summary_exit=$?
 
-  # Summary line
-  local total=$((passed + failed + skipped + na))
-  printf "Total: %b%d passed%b" "${GREEN}" "$passed" "${NC}"
-  ((failed > 0)) && printf ", %b%d failed%b" "${RED}" "$failed" "${NC}"
-  ((skipped > 0)) && printf ", %b%d skipped%b" "${YELLOW}" "$skipped" "${NC}"
-  ((na > 0)) && printf ", %b%d n/a%b" "${CYAN}" "$na" "${NC}"
-  printf " (of %d)\n\n" "$total"
-
-  # Help message
-  if ((failed > 0)); then
-    printf "%bRun %bjust lint-fix%b to auto-fix some issues%b\n\n" \
-      "${YELLOW}" "${GREEN}" "${YELLOW}" "${NC}"
-    return 1
-  fi
-
-  return 0
+  return $summary_exit
 }
 
 main() {
+  # Load appropriate summary module based on CI environment
+  load_summary_module
+
   detect_language_linters
 
   run_linters
