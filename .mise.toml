@@ -20,7 +20,7 @@ no_proxy = "{{ get_env(name='no_proxy', default='') }}"
 PIP_INDEX_URL = "{{ get_env(name='PIP_INDEX_URL', default='') }}"
 
 [tools]
-"aqua:rhysd/actionlint" = "v1.7.8"
+"aqua:rhysd/actionlint" = "v1.7.10"
 "aqua:siderolabs/conform" = "v0.1.0-alpha.30"
 "aqua:zricethezav/gitleaks" = "v8.29.1"
 "ubi:rvben/rumdl" = "v0.0.173"
