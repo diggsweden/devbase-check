@@ -58,6 +58,11 @@ lint-base:
 [group('lint')]
 lint-all: lint-base
 
+# Validate version control
+[group('lint')]
+lint-version-control:
+    @{{lint}}/version-control.sh
+
 # Validate commit messages (conform)
 [group('lint')]
 lint-commits:
