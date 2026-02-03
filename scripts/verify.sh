@@ -17,6 +17,7 @@ source "${SCRIPT_DIR}/../summary/common.sh"
 
 # Base linters
 LINTERS=(
+  "Version Control|git|just lint-version-control"
   "Commits|conform|just lint-commits"
   "Secrets|gitleaks|just lint-secrets"
   "YAML|yamlfmt|just lint-yaml"
