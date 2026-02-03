@@ -38,5 +38,12 @@ teardown() {
 
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_failure
-  assert_output --partial "Some changes are not under version control!"
+  assert_output --partial "Some changes are not under version control!
+
+  This can happen if
+
+    1. You forgot to version control your changes
+    2. A linter automatically fixed a problem or reformatted the code.
+
+  Please accept or discard any outstanding changes and try again."
 }
