@@ -23,9 +23,30 @@ find_yaml_files() {
     2>/dev/null
 }
 
+has_local_config() {
+  local config_files=(
+    ".yamlfmt"
+    ".yamlfmt.yml"
+    ".yamlfmt.yaml"
+    "yamlfmt.yml"
+    "yamlfmt.yaml"
+  )
+
+  for file in "${config_files[@]}"; do
+    [[ -f "$file" ]] && return 0
+  done
+
+  return 1
+}
+
 get_config_flag() {
-  # If project has its own config, use default behavior; otherwise use our default
-  if [[ ! -f ".yamlfmt" && ! -f "yamlfmt.yml" && ! -f "yamlfmt.yaml" && -f "${DEFAULT_CONFIG}" ]]; then
+  # If project has its own config, do nothing
+  if has_local_config; then
+    return 0
+  fi
+
+  # Otherwise, use default config if it exists
+  if [[ -f "${DEFAULT_CONFIG}" ]]; then
     printf "%s" "-conf ${DEFAULT_CONFIG}"
   fi
 }
