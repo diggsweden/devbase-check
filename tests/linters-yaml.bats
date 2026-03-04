@@ -74,3 +74,64 @@ EOF
   assert_failure
   [[ "$stderr" == *"Unknown action"* ]] || [[ "$output" == *"Unknown action"* ]]
 }
+
+@test "yaml.sh uses project config for all supported local config variants" {
+  cat > test.yaml << 'EOF'
+key: value
+EOF
+
+  mkdir -p "${TEST_DIR}/bin"
+  cat > "${TEST_DIR}/bin/yamlfmt" <<'EOF'
+#!/usr/bin/env bash
+printf "%s\n" "$*" > "${TEST_DIR}/yamlfmt.args"
+exit 0
+EOF
+  chmod +x "${TEST_DIR}/bin/yamlfmt"
+  export PATH="${TEST_DIR}/bin:${PATH}"
+
+  local configs=(
+    ".yamlfmt"
+    ".yamlfmt.yml"
+    ".yamlfmt.yaml"
+    "yamlfmt.yml"
+    "yamlfmt.yaml"
+  )
+
+  for cfg in "${configs[@]}"; do
+    rm -f .yamlfmt .yamlfmt.yml .yamlfmt.yaml yamlfmt.yml yamlfmt.yaml
+    : > "${TEST_DIR}/yamlfmt.args"
+    touch "$cfg"
+
+    run --separate-stderr "$LINTERS_DIR/yaml.sh" check
+
+    [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "cfg:${cfg} o:'${output}' e:'${stderr}'"
+    assert_success
+    args=$(<"${TEST_DIR}/yamlfmt.args")
+    [[ "$args" != *"-conf"* ]]
+  done
+}
+
+@test "yaml.sh uses default config when no local config exists" {
+  cat > test.yaml << 'EOF'
+key: value
+EOF
+
+  mkdir -p "${TEST_DIR}/bin"
+  cat > "${TEST_DIR}/bin/yamlfmt" <<'EOF'
+#!/usr/bin/env bash
+printf "%s\n" "$*" > "${TEST_DIR}/yamlfmt.args"
+exit 0
+EOF
+  chmod +x "${TEST_DIR}/bin/yamlfmt"
+  export PATH="${TEST_DIR}/bin:${PATH}"
+
+  rm -f .yamlfmt .yamlfmt.yml .yamlfmt.yaml yamlfmt.yml yamlfmt.yaml
+
+  run --separate-stderr "$LINTERS_DIR/yaml.sh" check
+
+  [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
+  assert_success
+  args=$(<"${TEST_DIR}/yamlfmt.args")
+  [[ "$args" == *"-conf"* ]]
+  [[ "$args" == *"/linters/config/.yamlfmt"* ]]
+}
