@@ -19,9 +19,22 @@ emit_status() {
 main() {
   print_header "COMMIT HEALTH (GOMMITLINT)"
 
-  local current_branch default_branch
+  local current_branch default_branch base_branch local_base remote_base
   current_branch=$(git branch --show-current)
   default_branch=$(get_default_branch)
+  local_base="$default_branch"
+  remote_base="origin/${default_branch}"
+  base_branch="$local_base"
+
+  # Prefer local default branch first. Fall back to origin/<default> when local
+  # is missing or not in HEAD ancestry (avoids false ahead counts in diverged trees).
+  if branch_exists "$local_base"; then
+    if ! git merge-base --is-ancestor "$local_base" HEAD >/dev/null 2>&1 && branch_exists "$remote_base"; then
+      base_branch="$remote_base"
+    fi
+  elif branch_exists "$remote_base"; then
+    base_branch="$remote_base"
+  fi
 
   # Skip if on the base branch itself (gommitlint can't handle base..HEAD when they're the same)
   if [[ "$current_branch" == "$default_branch" ]]; then
@@ -30,8 +43,8 @@ main() {
     return 0
   fi
 
-  if ! has_commits_since "$default_branch"; then
-    print_info "No commits to check on ${current_branch} (compared to ${default_branch})"
+  if ! has_commits_since "$base_branch"; then
+    print_info "No commits to check on ${current_branch} (compared to ${base_branch})"
     emit_status "na" "n/a"
     return 0
   fi
@@ -50,7 +63,7 @@ main() {
     return 0
   fi
 
-  if $gommitlint_cmd validate --base-branch="${default_branch}" 2>/dev/null; then
+  if $gommitlint_cmd validate --base-branch="${base_branch}" 2>/dev/null; then
     print_success "Commit health check passed"
     emit_status "pass" "ok"
     return 0

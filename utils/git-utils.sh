@@ -59,6 +59,17 @@ get_default_branch() {
 # Returns: 0 if exists, 1 if not
 branch_exists() {
   local branch="$1"
+
+  if [[ "$branch" == refs/* ]]; then
+    git show-ref --verify --quiet "$branch" 2>/dev/null
+    return $?
+  fi
+
+  if [[ "$branch" == origin/* ]]; then
+    git show-ref --verify --quiet "refs/remotes/$branch" 2>/dev/null
+    return $?
+  fi
+
   git show-ref --verify --quiet "refs/heads/$branch" 2>/dev/null ||
     git show-ref --verify --quiet "refs/remotes/origin/$branch" 2>/dev/null
 }

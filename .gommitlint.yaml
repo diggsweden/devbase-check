@@ -5,4 +5,6 @@
 gommitlint:
   crypto_signature:
     required: true
-    require_gpg: true
+    require_ssh: true
+  repo:
+    max_commits_ahead: 10
