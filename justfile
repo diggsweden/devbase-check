@@ -58,7 +58,7 @@ lint-base:
 [group('lint')]
 lint-all: lint-base
 
-# Validate commit messages (conform)
+# Validate commit messages (gommitlint)
 [group('lint')]
 lint-commits:
     @{{lint}}/commits.sh

@@ -20,7 +20,7 @@ setup() {
 }
 
 teardown() {
-  unstub conform 2>/dev/null || true
+  unstub gommitlint 2>/dev/null || true
   common_teardown
 }
 

@@ -69,7 +69,7 @@ Run on every project. Skip automatically if no relevant files found:
 
 | Recipe | Tool | Checks | Skips when |
 |--------|------|--------|------------|
-| `lint-commits` | conform | Commit message format | On default branch or no new commits |
+| `lint-commits` | gommitlint | Commit message format | On default branch or no new commits |
 | `lint-secrets` | gitleaks | Secrets/credentials | Never (scans commits) |
 | `lint-yaml` | yamlfmt | YAML formatting | No .yml/.yaml files |
 | `lint-markdown` | rumdl | Markdown style | No .md files |

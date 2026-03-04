@@ -33,7 +33,7 @@
       ],
       "matchPackageNames": [
         "aqua:zricethezav/gitleaks",
-        "aqua:siderolabs/conform",
+        "forgejo:itiquette/gommitlint",
         "aqua:rhysd/actionlint",
         "pipx:reuse"
       ],

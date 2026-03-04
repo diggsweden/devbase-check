@@ -57,7 +57,7 @@ setup-devtools:
 # Check required tools
 [group('setup')]
 check-tools: _ensure-devtools
-    @{{devtools_dir}}/scripts/check-tools.sh --check-devtools mise git just node npm rumdl yamlfmt actionlint gitleaks shellcheck shfmt conform reuse
+    @{{devtools_dir}}/scripts/check-tools.sh --check-devtools mise git just node npm rumdl yamlfmt actionlint gitleaks shellcheck shfmt gommitlint reuse
 
 # Install Node dependencies
 [group('setup')]
