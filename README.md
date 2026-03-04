@@ -69,6 +69,7 @@ Run on every project. Skip automatically if no relevant files found:
 
 | Recipe | Tool | Checks | Skips when |
 |--------|------|--------|------------|
+| `lint-version-control` | git | Working tree is clean and version controlled | Never (fails if dirty or outside a Git repo) |
 | `lint-commits` | gommitlint | Commit message format | On default branch or no new commits |
 | `lint-secrets` | gitleaks | Secrets/credentials | Never (scans commits) |
 | `lint-yaml` | yamlfmt | YAML formatting | No .yml/.yaml files |
@@ -438,6 +439,7 @@ devbase-check/
 │   ├── secrets.sh
 │   ├── shell-fmt.sh
 │   ├── shell.sh
+│   ├── version-control.sh
 │   ├── xml.sh
 │   └── yaml.sh
 ├── scripts/
