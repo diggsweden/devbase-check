@@ -15,6 +15,7 @@ load "${BATS_TEST_DIRNAME}/test_helper.bash"
 setup() {
   common_setup
   export LINTERS_DIR="${DEVTOOLS_ROOT}/linters"
+  export DEVBASE_CHECK_MARKERS=1
   cd "$TEST_DIR"
   init_git_repo
 }
@@ -29,6 +30,7 @@ teardown() {
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "All changes are under version control"
+  assert_output --partial "DEVBASE_CHECK_STATUS=pass"
 }
 
 @test "version-control.sh rejects unversioned file" {
@@ -37,6 +39,7 @@ teardown() {
 
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_failure
+  assert_output --partial "DEVBASE_CHECK_STATUS=fail"
   assert_output --partial "Some changes are not under version control!
 
   This can happen if
@@ -54,6 +57,7 @@ teardown() {
 
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_failure
+  assert_output --partial "DEVBASE_CHECK_STATUS=fail"
   assert_output --partial "Not a Git repository - cannot verify version control state"
 
   rm -rf "$nonrepo_dir"

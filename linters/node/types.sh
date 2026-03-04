@@ -9,22 +9,31 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../utils/colors.sh"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 main() {
   print_header "NODE TYPE CHECKING (TSC)"
 
   if ! command -v npx >/dev/null 2>&1; then
     print_error "npx not found. Install Node.js and npm"
+    emit_status "fail" "failed"
     return 1
   fi
 
   # Check if project has TypeScript configured
   if [[ ! -f "tsconfig.json" ]] && [[ ! -f "package.json" ]]; then
     print_warning "No tsconfig.json or package.json found. Skipping type checking"
+    emit_status "skip" "skipped"
     return 0
   fi
 
   if [[ -f "package.json" ]] && ! grep -q "typescript" package.json 2>/dev/null; then
     print_warning "TypeScript not configured in package.json. Skipping"
+    emit_status "skip" "skipped"
     return 0
   fi
 
@@ -44,9 +53,11 @@ main() {
 
   if [[ $? -eq 0 ]]; then
     print_success "Type checking passed"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "Type checking failed - fix type errors"
+    emit_status "fail" "failed"
     return 1
   fi
 }

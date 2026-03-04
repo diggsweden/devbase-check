@@ -9,22 +9,31 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../utils/colors.sh"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 main() {
   print_header "NODE ESLINT (JS/TS)"
 
   if ! command -v npx >/dev/null 2>&1; then
     print_error "npx not found. Install Node.js and npm"
+    emit_status "fail" "failed"
     return 1
   fi
 
   # Check if project has ESLint configured
   if [[ ! -f "package.json" ]]; then
     print_warning "No package.json found. Skipping ESLint"
+    emit_status "skip" "skipped"
     return 0
   fi
 
   if ! grep -q "eslint" package.json 2>/dev/null; then
     print_warning "ESLint not configured in package.json. Skipping"
+    emit_status "skip" "skipped"
     return 0
   fi
 
@@ -38,9 +47,11 @@ main() {
 
   if [[ $? -eq 0 ]]; then
     print_success "ESLint check passed"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "ESLint check failed - run 'npm run lint -- --fix' or 'npx eslint . --fix' to fix"
+    emit_status "fail" "failed"
     return 1
   fi
 }

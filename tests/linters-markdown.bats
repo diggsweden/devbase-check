@@ -15,10 +15,12 @@ load "${BATS_TEST_DIRNAME}/test_helper.bash"
 setup() {
   common_setup
   export LINTERS_DIR="${DEVTOOLS_ROOT}/linters"
+  export DEVBASE_CHECK_MARKERS=1
   cd "$TEST_DIR"
 }
 
 teardown() {
+  unstub rumdl 2>/dev/null || true
   common_teardown
 }
 
@@ -33,6 +35,7 @@ EOF
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "passed"
+  assert_output --partial "DEVBASE_CHECK_STATUS=pass"
 }
 
 @test "markdown.sh fix runs rumdl with --fix" {
@@ -46,4 +49,17 @@ EOF
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "fixed"
+  assert_output --partial "DEVBASE_CHECK_STATUS=pass"
+}
+
+@test "markdown.sh check reports fail marker when rumdl fails" {
+  cat > test.md << 'EOF'
+# Test
+EOF
+  stub_repeated rumdl "exit 1"
+
+  run --separate-stderr "$LINTERS_DIR/markdown.sh" check
+
+  assert_failure
+  assert_output --partial "DEVBASE_CHECK_STATUS=fail"
 }

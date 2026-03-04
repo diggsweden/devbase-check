@@ -10,12 +10,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
 source "${SCRIPT_DIR}/../utils/git-utils.sh"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 main() {
   print_header "SECRET SCANNING (GITLEAKS)"
 
   if ! command -v gitleaks >/dev/null 2>&1; then
     print_warning "gitleaks not found in PATH - skipping secret scanning"
     echo "  Install: mise install"
+    emit_status "skip" "not in PATH"
     return 0
   fi
 
@@ -40,9 +47,11 @@ main() {
 
   if [[ $gitleaks_result -eq 0 ]]; then
     print_success "No secrets found"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "Secret scanning failed - secrets may be present!"
+    emit_status "fail" "failed"
     return 1
   fi
 }

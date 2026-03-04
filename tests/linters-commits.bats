@@ -15,6 +15,7 @@ load "${BATS_TEST_DIRNAME}/test_helper.bash"
 setup() {
   common_setup
   export LINTERS_DIR="${DEVTOOLS_ROOT}/linters"
+  export DEVBASE_CHECK_MARKERS=1
   cd "$TEST_DIR"
   init_git_repo
 }
@@ -30,4 +31,5 @@ teardown() {
   [ "x$BATS_TEST_COMPLETED" = "x" ] && echo "o:'${output}' e:'${stderr}'"
   assert_success
   assert_output --partial "no commits to check"
+  assert_output --partial "DEVBASE_CHECK_STATUS=na"
 }

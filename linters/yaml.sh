@@ -11,6 +11,12 @@ source "${SCRIPT_DIR}/../utils/colors.sh"
 
 readonly ACTION="${1:-check}"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 # Default config with standard exclusions
 readonly DEFAULT_CONFIG="${SCRIPT_DIR}/config/.yamlfmt"
 
@@ -57,9 +63,11 @@ check_yaml() {
   # shellcheck disable=SC2086
   if yamlfmt -lint $conf_flag .; then
     print_success "YAML linting passed"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "YAML linting failed - run 'just lint-yaml-fix' to fix"
+    emit_status "fail" "failed"
     return 1
   fi
 }
@@ -70,9 +78,11 @@ fix_yaml() {
   # shellcheck disable=SC2086
   if yamlfmt $conf_flag .; then
     print_success "YAML files formatted"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "Failed to format YAML files"
+    emit_status "fail" "failed"
     return 1
   fi
 }
@@ -85,12 +95,14 @@ main() {
 
   if [[ -z "$files" ]]; then
     print_info "No YAML files found to check"
+    emit_status "na" "n/a"
     return 0
   fi
 
   if ! command -v yamlfmt >/dev/null 2>&1; then
     print_warning "yamlfmt not found in PATH - skipping YAML linting"
     echo "  Install: mise install"
+    emit_status "skip" "not in PATH"
     return 0
   fi
 
@@ -100,6 +112,7 @@ main() {
   *)
     print_error "Unknown action: $ACTION"
     printf "Usage: %s [check|fix]\n" "$0"
+    emit_status "fail" "failed"
     return 1
     ;;
   esac

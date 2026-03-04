@@ -15,6 +15,7 @@ load "${BATS_TEST_DIRNAME}/test_helper.bash"
 setup() {
   common_setup
   export JAVA_LINTERS="${DEVTOOLS_ROOT}/linters/java"
+  export DEVBASE_CHECK_MARKERS=1
   cd "$TEST_DIR"
 }
 
@@ -75,6 +76,37 @@ EOF
   
   assert_success
   assert_output --partial "No pom.xml"
+  assert_output --partial "DEVBASE_CHECK_STATUS=skip"
+}
+
+@test "spotbugs.sh reports pass marker when mvn succeeds" {
+  cat > pom.xml << 'EOF'
+<project>
+  <modelVersion>4.0.0</modelVersion>
+</project>
+EOF
+  stub_repeated mvn "true"
+
+  run "$JAVA_LINTERS/spotbugs.sh"
+
+  assert_success
+  assert_output --partial "SpotBugs passed"
+  assert_output --partial "DEVBASE_CHECK_STATUS=pass"
+}
+
+@test "spotbugs.sh reports fail marker when mvn fails" {
+  cat > pom.xml << 'EOF'
+<project>
+  <modelVersion>4.0.0</modelVersion>
+</project>
+EOF
+  stub_repeated mvn "exit 1"
+
+  run --separate-stderr "$JAVA_LINTERS/spotbugs.sh"
+
+  assert_failure
+  [[ "$stderr" == *"SpotBugs failed"* ]] || [[ "$output" == *"SpotBugs failed"* ]]
+  assert_output --partial "DEVBASE_CHECK_STATUS=fail"
 }
 
 @test "format.sh skips when no pom.xml present" {

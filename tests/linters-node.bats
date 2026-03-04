@@ -15,6 +15,7 @@ load "${BATS_TEST_DIRNAME}/test_helper.bash"
 setup() {
   common_setup
   export NODE_LINTERS="${DEVTOOLS_ROOT}/linters/node"
+  export DEVBASE_CHECK_MARKERS=1
   cd "$TEST_DIR"
 }
 
@@ -28,6 +29,7 @@ teardown() {
   
   assert_success
   assert_output --partial "package.json"
+  assert_output --partial "DEVBASE_CHECK_STATUS=skip"
 }
 
 @test "eslint.sh skips when eslint not in package.json" {
@@ -42,6 +44,7 @@ EOF
   
   assert_success
   assert_output --partial "ESLint"
+  assert_output --partial "DEVBASE_CHECK_STATUS=skip"
 }
 
 @test "eslint.sh runs npx eslint when configured" {
@@ -58,6 +61,24 @@ EOF
   run "$NODE_LINTERS/eslint.sh"
   
   assert_success
+  assert_output --partial "DEVBASE_CHECK_STATUS=pass"
+}
+
+@test "eslint.sh reports fail marker when eslint fails" {
+  cat > package.json << 'EOF'
+{
+  "name": "test",
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
+}
+EOF
+  stub_repeated npx "exit 1"
+
+  run --separate-stderr "$NODE_LINTERS/eslint.sh"
+
+  assert_failure
+  assert_output --partial "DEVBASE_CHECK_STATUS=fail"
 }
 
 @test "format.sh skips when no package.json present" {

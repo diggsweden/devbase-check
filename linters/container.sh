@@ -9,6 +9,12 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 find_containerfiles() {
   find . -type f \( -name "Containerfile" -o -name "Containerfile.*" -o -name "Dockerfile" -o -name "Dockerfile.*" \) -not -path "./.git/*" 2>/dev/null
 }
@@ -21,12 +27,14 @@ main() {
 
   if [[ -z "$files" ]]; then
     print_info "No Containerfile/Dockerfile found to check"
+    emit_status "na" "n/a"
     return 0
   fi
 
   if ! command -v hadolint >/dev/null 2>&1; then
     print_warning "hadolint not found in PATH - skipping container linting"
     echo "  Install: mise install"
+    emit_status "skip" "not in PATH"
     return 0
   fi
 
@@ -40,9 +48,11 @@ main() {
 
   if [[ $failed -eq 0 ]]; then
     print_success "Container linting passed"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "Container linting failed"
+    emit_status "fail" "failed"
     return 1
   fi
 }

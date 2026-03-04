@@ -9,6 +9,12 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 find_xml_files() {
   find . -type f -name "*.xml" -not -path "./.git/*" -not -path "./target/*" -not -path "./.idea/*" -not -path "./node_modules/*" 2>/dev/null
 }
@@ -21,6 +27,7 @@ main() {
 
   if [[ -z "$files" ]]; then
     print_info "No XML files found to check"
+    emit_status "na" "n/a"
     return 0
   fi
 
@@ -29,6 +36,7 @@ main() {
     echo "  Install: Ubuntu/Debian: sudo apt install libxml2-utils"
     echo "           Fedora/RHEL:   sudo dnf install libxml2"
     echo "           macOS:         brew install libxml2"
+    emit_status "skip" "not in PATH"
     return 0
   fi
 
@@ -44,9 +52,11 @@ main() {
 
   if [[ $failed -eq 0 ]]; then
     print_success "XML linting passed ($count files)"
+    emit_status "pass" "ok"
     return 0
   else
     print_error "XML linting failed"
+    emit_status "fail" "failed"
     return 1
   fi
 }

@@ -9,6 +9,12 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../utils/colors.sh"
 
+emit_status() {
+  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
+  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
+}
+
 print_header "NODE LINTING (ALL)"
 
 has_errors=false
@@ -39,8 +45,10 @@ fi
 
 if [ "$has_errors" = true ]; then
   print_error "Node linting failed"
+  emit_status "fail" "failed"
   exit 1
 else
   print_success "All Node linting passed"
+  emit_status "pass" "ok"
   exit 0
 fi
