@@ -20,8 +20,9 @@ no_proxy = "{{ get_env(name='no_proxy', default='') }}"
 PIP_INDEX_URL = "{{ get_env(name='PIP_INDEX_URL', default='') }}"
 
 [tools]
+java = "temurin-25"
 "aqua:rhysd/actionlint" = "v1.7.11"
-"forgejo:itiquette/gommitlint" = "0.9.3"
+"forgejo:itiquette/gommitlint" = "0.9.4"
 "aqua:zricethezav/gitleaks" = "v8.30.0"
 "ubi:rvben/rumdl" = "v0.1.25"
 "aqua:koalaman/shellcheck" = "v0.11.0"
