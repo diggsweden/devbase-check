@@ -404,7 +404,7 @@ If using [reusable-ci](https://github.com/diggsweden/reusable-ci), enable devbas
 ```yaml
 jobs:
   lint:
-    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@main
+    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@cd65f1f80267cc82d7e4cdecc26be83908417b01 # v2.7.1
     with:
       project-type: maven
       linters.devbasecheck: true
