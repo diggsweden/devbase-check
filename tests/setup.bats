@@ -98,7 +98,7 @@ teardown() {
   
   # Create OLD marker file (61 minutes ago)
   touch "$fake_dir/.last-update-check"
-  touch -d "61 minutes ago" "$fake_dir/.last-update-check"
+  env TZ=XXX0 touch -d "$(TZ=XXX+1:01 date +%FT%T)" "$fake_dir/.last-update-check"
   
   run "$SCRIPT_DIR/setup.sh" "https://example.com/repo" "$fake_dir"
   
@@ -156,7 +156,7 @@ teardown() {
   
   # Create old marker to trigger update check
   touch "$fake_dir/.last-update-check"
-  touch -d "61 minutes ago" "$fake_dir/.last-update-check"
+  env TZ=XXX0 touch -d "$(TZ=XXX+1:01 date +%FT%T)" "$fake_dir/.last-update-check"
   
   # Run setup in non-interactive mode (CI=true auto-updates)
   export CI=true
