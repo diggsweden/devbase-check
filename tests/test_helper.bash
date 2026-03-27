@@ -98,7 +98,7 @@ setup_isolated_home() {
 # Usage: init_git_repo
 init_git_repo() {
   export GIT_CONFIG_NOSYSTEM=1
-  git init -q
+  git init -q -b main
   git config user.email "test@example.com"
   git config user.name "Test User"
   # Make git objects writable so safe_temp_del can clean up
