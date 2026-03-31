@@ -180,6 +180,7 @@ lint-node-format-fix:
 [group('test')]
 test:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Running tests" "npm test"
     npm test
@@ -193,6 +194,7 @@ test:
 [group('build')]
 build:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Building" "npm run build"
     npm run build
@@ -202,6 +204,7 @@ build:
 [group('build')]
 clean:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Cleaning" "rm -rf dist node_modules"
     rm -rf dist node_modules

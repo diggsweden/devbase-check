@@ -199,6 +199,7 @@ test:
 [group('build')]
 build:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Building" "mvn install -DskipTests"
     mvn {{maven_opts}} install -DskipTests
@@ -208,6 +209,7 @@ build:
 [group('build')]
 clean:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Cleaning" "mvn clean"
     mvn clean
