@@ -48,7 +48,7 @@ create_bare_remote() {
 
 @test "get_default_branch: cloned repo with origin/HEAD returns correct branch" {
   # Simulate a cloned repo by setting up origin/HEAD symbolic ref
-  init_git_repo
+  init_isolated_git_repo
   local remote_path
   remote_path=$(create_bare_remote)
   git remote add origin "$remote_path"
@@ -65,7 +65,7 @@ create_bare_remote() {
 @test "get_default_branch: local repo pushed to remote (no origin/HEAD) returns main" {
   # This is the failing case: git init + git remote add + git push
   # origin/main exists but origin/HEAD does not
-  init_git_repo
+  init_isolated_git_repo
   local remote_path
   remote_path=$(create_bare_remote)
   git remote add origin "$remote_path"
@@ -80,13 +80,7 @@ create_bare_remote() {
 
 @test "get_default_branch: local repo with master pushed to remote returns master" {
   # Same as above but with master branch
-  export GIT_CONFIG_NOSYSTEM=1
-  git init -q --initial-branch=master
-  git config user.email "test@example.com"
-  git config user.name "Test User"
-  echo "initial" > file.txt
-  git add file.txt
-  git commit -q -m "Initial commit"
+  init_isolated_git_repo master
 
   local remote_path
   remote_path=$(create_bare_remote)
@@ -101,7 +95,7 @@ create_bare_remote() {
 
 @test "get_default_branch: pure local repo with main returns main" {
   # No remote at all
-  init_git_repo
+  init_isolated_git_repo
 
   run get_default_branch
 
@@ -111,13 +105,7 @@ create_bare_remote() {
 
 @test "get_default_branch: pure local repo with master returns master" {
   # No remote, default branch is master
-  export GIT_CONFIG_NOSYSTEM=1
-  git init -q --initial-branch=master
-  git config user.email "test@example.com"
-  git config user.name "Test User"
-  echo "initial" > file.txt
-  git add file.txt
-  git commit -q -m "Initial commit"
+  init_isolated_git_repo master
 
   run get_default_branch
 
@@ -127,13 +115,7 @@ create_bare_remote() {
 
 @test "get_default_branch: prefers origin/main over local master" {
   # Edge case: local master exists, but origin/main also exists
-  export GIT_CONFIG_NOSYSTEM=1
-  git init -q --initial-branch=master
-  git config user.email "test@example.com"
-  git config user.name "Test User"
-  echo "initial" > file.txt
-  git add file.txt
-  git commit -q -m "Initial commit"
+  init_isolated_git_repo master
 
   local remote_path
   remote_path=$(create_bare_remote)
@@ -151,8 +133,10 @@ create_bare_remote() {
 
 @test "get_default_branch: empty repo falls back to main" {
   # Repo with no commits yet
+  setup_isolated_home
   export GIT_CONFIG_NOSYSTEM=1
-  git init -q
+  export GIT_CONFIG_GLOBAL="${HOME}/.gitconfig"
+  git init -q -b main
 
   run get_default_branch
 
@@ -165,7 +149,7 @@ create_bare_remote() {
 # =============================================================================
 
 @test "branch_exists: returns true for existing local branch" {
-  init_git_repo
+  init_isolated_git_repo
 
   run branch_exists "main"
 
@@ -173,7 +157,7 @@ create_bare_remote() {
 }
 
 @test "branch_exists: returns false for non-existing branch" {
-  init_git_repo
+  init_isolated_git_repo
 
   run branch_exists "nonexistent"
 
@@ -181,7 +165,7 @@ create_bare_remote() {
 }
 
 @test "branch_exists: returns true for remote tracking branch" {
-  init_git_repo
+  init_isolated_git_repo
   local remote_path
   remote_path=$(create_bare_remote)
   git remote add origin "$remote_path"
@@ -197,7 +181,7 @@ create_bare_remote() {
 # =============================================================================
 
 @test "has_commits_since: returns true when commits exist on feature branch" {
-  init_git_repo
+  init_isolated_git_repo
   git checkout -b feature 2>/dev/null
   echo "feature" > feature.txt
   git add feature.txt
@@ -209,7 +193,7 @@ create_bare_remote() {
 }
 
 @test "has_commits_since: returns false when no commits since branch" {
-  init_git_repo
+  init_isolated_git_repo
   git checkout -b feature 2>/dev/null
   # No new commits
 
@@ -219,7 +203,7 @@ create_bare_remote() {
 }
 
 @test "has_commits_since: returns false when base branch does not exist" {
-  init_git_repo
+  init_isolated_git_repo
 
   run has_commits_since "nonexistent"
 
@@ -227,7 +211,7 @@ create_bare_remote() {
 }
 
 @test "has_commits_since: works with remote tracking branch as base" {
-  init_git_repo
+  init_isolated_git_repo
   local remote_path
   remote_path=$(create_bare_remote)
   git remote add origin "$remote_path"

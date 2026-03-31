@@ -16,7 +16,7 @@ setup() {
   export SCRIPT_DIR="${DEVTOOLS_ROOT}/scripts"
   export DEVBASE_DIR="${DEVTOOLS_ROOT}"
   cd "$TEST_DIR"
-  init_git_repo
+  init_isolated_git_repo
 }
 
 teardown() {

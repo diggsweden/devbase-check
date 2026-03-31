@@ -39,20 +39,10 @@ teardown() {
 # =============================================================================
 
 @test "setup.sh creates marker file after update check" {
-  setup_isolated_home
   local fake_dir="${TEST_DIR}/devtools"
   mkdir -p "$fake_dir"
-  
-  # Init isolated git repo
   cd "$fake_dir"
-  export GIT_CONFIG_NOSYSTEM=1
-  export GIT_CONFIG_GLOBAL="${HOME}/.gitconfig"
-  git init -q
-  git config user.email "test@example.com"
-  git config user.name "Test"
-  echo "test" > README.md
-  git add README.md
-  git commit -q -m "init"
+  init_isolated_git_repo
   
   # Stub git fetch to succeed
   stub_repeated git 'exit 0'
@@ -81,20 +71,10 @@ teardown() {
 }
 
 @test "setup.sh checks for updates if marker file is older than 1 hour" {
-  setup_isolated_home
   local fake_dir="${TEST_DIR}/devtools"
   mkdir -p "$fake_dir"
-  
-  # Init isolated git repo
   cd "$fake_dir"
-  export GIT_CONFIG_NOSYSTEM=1
-  export GIT_CONFIG_GLOBAL="${HOME}/.gitconfig"
-  git init -q
-  git config user.email "test@example.com"
-  git config user.name "Test"
-  echo "test" > README.md
-  git add README.md
-  git commit -q -m "init"
+  init_isolated_git_repo
   
   # Create OLD marker file (61 minutes ago)
   touch "$fake_dir/.last-update-check"
@@ -115,27 +95,19 @@ teardown() {
 # =============================================================================
 
 @test "setup.sh update handles untracked files without failing" {
-  setup_isolated_home
   local fake_dir="${TEST_DIR}/devtools"
   local remote_dir="${TEST_DIR}/remote.git"
-  
+
   # Create local repo with two commits and tags
   mkdir -p "$fake_dir"
   cd "$fake_dir"
-  export GIT_CONFIG_NOSYSTEM=1
-  export GIT_CONFIG_GLOBAL="${HOME}/.gitconfig"
   export GIT_EDITOR=true  # Prevent editor from opening
-  git init -q --initial-branch=main
-  git config user.email "test@example.com"
-  git config user.name "Test"
-  echo "initial" > README.md
-  git add README.md
-  git commit -q -m "Initial commit"
+  init_isolated_git_repo
   git tag -a v1.0.0 -m "v1.0.0"  # Use annotated tag with message
   
   # Make a new commit and tag v1.0.1
-  echo "updated" > README.md
-  git add README.md
+  echo "updated" > file.txt
+  git add file.txt
   git commit -q -m "Update"
   git tag -a v1.0.1 -m "v1.0.1"
   

@@ -17,7 +17,7 @@ setup() {
   export LINTERS_DIR="${DEVTOOLS_ROOT}/linters"
   export DEVBASE_CHECK_MARKERS=1
   cd "$TEST_DIR"
-  init_git_repo
+  init_isolated_git_repo
 }
 
 teardown() {

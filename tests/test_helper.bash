@@ -32,13 +32,6 @@ common_teardown() {
   safe_temp_del "$TEST_DIR"
 }
 
-# Setup with isolated HOME environment
-# Usage: common_setup_isolated
-common_setup_isolated() {
-  common_setup
-  setup_isolated_home
-}
-
 # =============================================================================
 # Safe Temp Directory Cleanup
 # =============================================================================
@@ -94,11 +87,14 @@ setup_isolated_home() {
 # Git Repository Setup Helpers
 # =============================================================================
 
-# Initialize a minimal git repository for testing
-# Usage: init_git_repo
-init_git_repo() {
+# Initialize an isolated git repository for testing
+# Usage: init_isolated_git_repo [branch_name]
+init_isolated_git_repo() {
+  local branch="${1:-main}"
+  setup_isolated_home
   export GIT_CONFIG_NOSYSTEM=1
-  git init -q
+  export GIT_CONFIG_GLOBAL="${HOME}/.gitconfig"
+  git init -q -b "$branch"
   git config user.email "test@example.com"
   git config user.name "Test User"
   # Make git objects writable so safe_temp_del can clean up
@@ -106,22 +102,6 @@ init_git_repo() {
   echo "initial" >file.txt
   git add file.txt
   git commit -q -m "Initial commit"
-}
-
-# Initialize git repo with isolated HOME and config
-# Usage: init_isolated_git_repo
-init_isolated_git_repo() {
-  setup_isolated_home
-  export GIT_CONFIG_NOSYSTEM=1
-  export GIT_CONFIG_GLOBAL="${HOME}/.gitconfig"
-  init_git_repo
-}
-
-# Setup for tests that need isolated git repository
-# Usage: common_setup_with_isolated_git
-common_setup_with_isolated_git() {
-  common_setup
-  init_isolated_git_repo
 }
 
 # =============================================================================
