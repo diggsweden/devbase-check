@@ -72,6 +72,7 @@ tools-install: _ensure-devtools
 [group('verify')]
 verify: _ensure-devtools check-tools lint-all
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_success "All checks passed"
 
@@ -133,6 +134,7 @@ lint-xml:
 [group('lint-fix')]
 lint-fix: _ensure-devtools lint-yaml-fix lint-markdown-fix lint-shell-fmt-fix
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_success "All auto-fixes completed"
 

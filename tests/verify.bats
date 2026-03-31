@@ -197,6 +197,78 @@ EOF
   refute_output --partial "1 skipped"
 }
 
+@test "verify.sh runs all linters even when early ones fail" {
+  cat > justfile << 'EOF'
+lint-version-control:
+    @printf "DEVBASE_CHECK_STATUS=fail\n"
+    @printf "DEVBASE_CHECK_DETAILS=dirty tree\n"
+lint-commits:
+    @printf "DEVBASE_CHECK_STATUS=fail\n"
+    @printf "DEVBASE_CHECK_DETAILS=bad format\n"
+lint-secrets:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-container:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+    @printf "DEVBASE_CHECK_STATUS=fail\n"
+    @printf "DEVBASE_CHECK_DETAILS=invalid xml\n"
+EOF
+
+  run "$SCRIPT_DIR/verify.sh"
+
+  assert_failure
+  # All three failures must appear — proves linters after early failures still ran
+  assert_output --partial "Working Tree"
+  assert_output --partial "Commits"
+  assert_output --partial "XML"
+  assert_output --partial "3 failed"
+}
+
+@test "verify.sh reports correct pass count alongside failures" {
+  cat > justfile << 'EOF'
+lint-version-control:
+    @printf "DEVBASE_CHECK_STATUS=fail\n"
+lint-commits:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-secrets:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-container:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+EOF
+
+  run "$SCRIPT_DIR/verify.sh"
+
+  assert_failure
+  assert_output --partial "1 failed"
+  assert_output --partial "10 passed"
+}
+
 @test "verify.sh fails when explicit fail marker is reported" {
   cat > justfile << 'EOF'
 lint-version-control:

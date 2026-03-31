@@ -72,6 +72,7 @@ deps-install:
 [group('verify')]
 verify: _ensure-devtools check-tools lint-all test
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_success "All checks passed"
 
@@ -83,6 +84,7 @@ verify: _ensure-devtools check-tools lint-all test
 [group('lint')]
 lint-all: _ensure-devtools lint-node
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just --justfile {{devtools_dir}}/justfile lint-base
     just_success "All linting checks completed"
@@ -152,6 +154,7 @@ lint-node-ts-types:
 [group('lint-fix')]
 lint-fix: _ensure-devtools lint-yaml-fix lint-markdown-fix lint-shell-fmt-fix lint-node-format-fix
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_success "All auto-fixes completed"
 
@@ -180,6 +183,7 @@ lint-node-format-fix:
 [group('test')]
 test:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Running tests" "npm test"
     npm test
@@ -193,6 +197,7 @@ test:
 [group('build')]
 build:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Building" "npm run build"
     npm run build
@@ -202,6 +207,7 @@ build:
 [group('build')]
 clean:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Cleaning" "rm -rf dist node_modules"
     rm -rf dist node_modules

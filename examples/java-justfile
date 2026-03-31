@@ -159,6 +159,7 @@ lint-java-fmt:
 [group('lint-fix')]
 lint-fix: _ensure-devtools lint-yaml-fix lint-markdown-fix lint-shell-fmt-fix lint-java-fmt-fix
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_success "All auto-fixes completed"
 
@@ -199,6 +200,7 @@ test:
 [group('build')]
 build:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Building" "mvn install -DskipTests"
     mvn {{maven_opts}} install -DskipTests
@@ -208,6 +210,7 @@ build:
 [group('build')]
 clean:
     #!/usr/bin/env bash
+    set -euo pipefail
     source "{{colors}}"
     just_header "Cleaning" "mvn clean"
     mvn clean
