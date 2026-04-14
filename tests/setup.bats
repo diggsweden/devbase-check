@@ -94,6 +94,83 @@ teardown() {
 # Update with untracked files tests
 # =============================================================================
 
+@test "setup.sh checks out latest tag on first run after bare clone" {
+  local fake_dir="${TEST_DIR}/devtools"
+  local remote_dir="${TEST_DIR}/remote.git"
+
+  # Bare remote where the branch tip is an UNtagged commit — simulating
+  # the common case where main has moved past the latest release tag.
+  git init -q --bare "$remote_dir"
+  local work="${TEST_DIR}/work"
+  mkdir -p "$work"
+  cd "$work"
+  export GIT_EDITOR=true
+  init_isolated_git_repo
+  git tag -a v1.0.0 -m "v1.0.0"
+  echo "updated" >file.txt
+  git add file.txt
+  git commit -q -m "Update"
+  git tag -a v1.0.1 -m "v1.0.1"
+  echo "post-release work" >file2.txt
+  git add file2.txt
+  git commit -q -m "Work after release"
+  git remote add origin "$remote_dir"
+  git push --all origin 2>/dev/null
+  git push --tags origin 2>/dev/null
+
+  # Simulate what the consumer shim does: plain clone, HEAD ends up on
+  # the untagged branch tip.
+  git clone --quiet "$remote_dir" "$fake_dir"
+  cd "$fake_dir"
+
+  # Precondition: fresh clone is on the branch tip (not a tag) and has no marker.
+  run git describe --exact-match --tags HEAD
+  assert_failure
+  assert_not_exist "$fake_dir/.last-update-check"
+
+  run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir"
+  assert_success
+  assert_file_exists "$fake_dir/.last-update-check"
+
+  # HEAD should now be on v1.0.1.
+  cd "$fake_dir"
+  run git describe --tags --abbrev=0
+  assert_output "v1.0.1"
+}
+
+@test "setup.sh is silent and leaves marker untouched when fetch fails" {
+  local fake_dir="${TEST_DIR}/devtools"
+  mkdir -p "$fake_dir"
+  cd "$fake_dir"
+  init_isolated_git_repo
+
+  # Stub git to succeed on the calls setup.sh needs before fetch
+  # (rev-parse etc.) but fail on fetch — simulating offline.
+  stub_repeated git '[[ "$1" == "fetch"* ]] || [[ "$*" == *"fetch"* ]] && exit 1
+                     exit 0'
+
+  run "$SCRIPT_DIR/setup.sh" "https://example.com/repo" "$fake_dir"
+
+  assert_success
+  refute_output --partial "Could not check for updates"
+  refute_output --partial "no network"
+  assert_not_exist "$fake_dir/.last-update-check"
+}
+
+@test "DEVBASE_CHECK_SKIP_UPDATES=1 disables the update check entirely" {
+  local fake_dir="${TEST_DIR}/devtools"
+  mkdir -p "$fake_dir"
+
+  # Stub git to fail so we'd see an error if setup.sh tried to fetch.
+  stub_repeated git 'echo "git should not be called"; exit 1'
+
+  DEVBASE_CHECK_SKIP_UPDATES=1 run "$SCRIPT_DIR/setup.sh" "https://example.com/repo" "$fake_dir"
+
+  assert_success
+  refute_output --partial "git should not be called"
+  assert_not_exist "$fake_dir/.last-update-check"
+}
+
 @test "setup.sh update handles untracked files without failing" {
   local fake_dir="${TEST_DIR}/devtools"
   local remote_dir="${TEST_DIR}/remote.git"

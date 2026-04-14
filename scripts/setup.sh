@@ -54,40 +54,64 @@ check_for_updates() {
   local current="$1"
   local latest="$2"
 
-  if [[ "$current" != "$latest" && "$latest" != "unknown" ]]; then
-    # Auto-update in CI/non-interactive mode, prompt in interactive mode
-    if [[ "${CI:-false}" == "true" ]] || [[ ! -t 0 ]]; then
-      print_info "Auto-updating devtools to $latest"
-      update_to_version "$latest"
-    else
-      print_info "devtools installed: $current"
-      read -p "Update available: $latest. Update? [y/N] " -n 1 -r
-      printf "\n"
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        update_to_version "$latest"
-      fi
-    fi
+  [[ "$current" == "$latest" || "$latest" == "unknown" ]] && return 0
+
+  # Auto-update in CI, non-interactive shells, or when explicitly opted in.
+  if [[ "${CI:-false}" == "true" ]] \
+    || [[ "${DEVBASE_CHECK_AUTO_UPDATE:-0}" == "1" ]] \
+    || [[ ! -t 0 ]]; then
+    print_info "Auto-updating devtools to $latest"
+    update_to_version "$latest"
+    return 0
   fi
+
+  # Interactive: ask once per check. A "no" means "not now" — the hour TTL
+  # will let the next run ask again until the user accepts or a newer tag
+  # ships.
+  print_info "devtools installed: $current"
+  read -p "Update available: $latest. Update? [y/N] " -n 1 -r
+  printf "\n"
+  [[ $REPLY =~ ^[Yy]$ ]] && update_to_version "$latest"
 }
 
 main() {
-  if [[ -d "$DIR" ]]; then
-    # Skip update check if checked within the last hour (use marker file mtime)
-    local marker="$DIR/.last-update-check"
-    if [[ -f "$marker" ]] && [[ -z "$(find "$marker" -mmin +60 2>/dev/null)" ]]; then
-      return 0
-    fi
+  # Opt-out: never check for updates.
+  [[ "${DEVBASE_CHECK_SKIP_UPDATES:-0}" == "1" ]] && return 0
 
-    # Try to fetch tags only (shallow), but don't fail if network is unavailable
-    if ! git -C "$DIR" fetch --tags --depth 1 --quiet 2>/dev/null; then
-      print_warning "Could not check for updates (no network connection)"
-      return 0
-    fi
-    touch "$marker"
-    check_for_updates "$(get_current_version)" "$(get_latest_version)"
-  else
+  if [[ ! -d "$DIR" ]]; then
     clone_repo
+    return 0
   fi
+
+  local marker="$DIR/.last-update-check"
+
+  # First run after a bare clone (consumer bootstrap did `git clone` but
+  # didn't pick a tag): no marker present and HEAD isn't a tag. Silently
+  # check out the latest tag to complete the install — don't prompt the
+  # user about upgrading something they just installed.
+  if [[ ! -f "$marker" ]] \
+    && ! git -C "$DIR" describe --exact-match --tags HEAD >/dev/null 2>&1; then
+    # Full-depth fetch so `git describe` can resolve a tag reachable from
+    # origin/main even when the branch tip is past the latest release.
+    git -C "$DIR" fetch --tags --quiet 2>/dev/null || return 0
+    local latest
+    latest=$(get_latest_version)
+    [[ -n "$latest" && "$latest" != "unknown" ]] && update_to_version "$latest"
+    touch "$marker"
+    return 0
+  fi
+
+  # Hour TTL between checks, keyed off the marker's mtime.
+  if [[ -f "$marker" ]] && [[ -z "$(find "$marker" -mmin +60 2>/dev/null)" ]]; then
+    return 0
+  fi
+
+  # Silent on network failure: don't touch the marker so the next run
+  # retries instead of waiting out the TTL.
+  git -C "$DIR" fetch --tags --depth 1 --quiet 2>/dev/null || return 0
+
+  touch "$marker"
+  check_for_updates "$(get_current_version)" "$(get_latest_version)"
 }
 
 main
