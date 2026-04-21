@@ -33,6 +33,17 @@ update_to_version() {
   git -C "$DIR" stash --include-untracked --quiet 2>/dev/null || true
   git -C "$DIR" checkout "$version" --quiet
   print_success "Updated to $version"
+  maybe_nudge_recipe_migration
+}
+
+# One-time nudge for users whose project justfile still has the old
+# ~22-line setup-devtools recipe. Harmless if they've already migrated —
+# the tip prints once per install dir, then is silenced by a marker.
+maybe_nudge_recipe_migration() {
+  local flag="$DIR/.tip-minimal-recipe-shown"
+  [[ -f "$flag" ]] && return 0
+  print_info "Tip: a shorter setup-devtools recipe is available — see ${DIR}/examples/base-justfile"
+  touch "$flag"
 }
 
 clone_repo() {
@@ -48,6 +59,7 @@ clone_repo() {
     git -C "$DIR" checkout "$latest" --quiet
   fi
   print_success "Installed devtools ${latest:-main}"
+  maybe_nudge_recipe_migration
 }
 
 check_for_updates() {
@@ -57,9 +69,9 @@ check_for_updates() {
   [[ "$current" == "$latest" || "$latest" == "unknown" ]] && return 0
 
   # Auto-update in CI, non-interactive shells, or when explicitly opted in.
-  if [[ "${CI:-false}" == "true" ]] \
-    || [[ "${DEVBASE_CHECK_AUTO_UPDATE:-0}" == "1" ]] \
-    || [[ ! -t 0 ]]; then
+  if [[ "${CI:-false}" == "true" ]] ||
+    [[ "${DEVBASE_CHECK_AUTO_UPDATE:-0}" == "1" ]] ||
+    [[ ! -t 0 ]]; then
     print_info "Auto-updating devtools to $latest"
     update_to_version "$latest"
     return 0
@@ -89,8 +101,8 @@ main() {
   # didn't pick a tag): no marker present and HEAD isn't a tag. Silently
   # check out the latest tag to complete the install — don't prompt the
   # user about upgrading something they just installed.
-  if [[ ! -f "$marker" ]] \
-    && ! git -C "$DIR" describe --exact-match --tags HEAD >/dev/null 2>&1; then
+  if [[ ! -f "$marker" ]] &&
+    ! git -C "$DIR" describe --exact-match --tags HEAD >/dev/null 2>&1; then
     # Full-depth fetch so `git describe` can resolve a tag reachable from
     # origin/main even when the branch tip is past the latest release.
     git -C "$DIR" fetch --tags --quiet 2>/dev/null || return 0

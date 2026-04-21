@@ -112,3 +112,48 @@ just test
 ## Available Commands
 
 Run `just` to see all available commands.
+
+## Migrating your justfile
+
+If your downstream repo has an older `setup-devtools` recipe that inlines
+clone + update logic, you can shrink it. The install/update logic now
+lives entirely in `scripts/setup.sh` — consumers only need to ensure the
+directory exists and delegate.
+
+Replace the old inline recipe:
+
+```text
+setup-devtools:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ -d "{{devtools_dir}}" ]]; then
+        if ! git -C "{{devtools_dir}}" fetch --tags --depth 1 --quiet 2>/dev/null; then
+            printf "\033[0;33m! Could not check for updates...\033[0m\n"
+        elif [[ -f "{{devtools_dir}}/scripts/setup.sh" ]]; then
+            "{{devtools_dir}}/scripts/setup.sh" "{{devtools_repo}}" "{{devtools_dir}}"
+        fi
+    else
+        # ... 10+ lines of clone + fetch + checkout logic ...
+    fi
+```
+
+with the new two-line shim:
+
+```text
+setup-devtools:
+    @[[ -d "{{devtools_dir}}" ]] || { mkdir -p "$(dirname "{{devtools_dir}}")" && git clone --depth 1 "{{devtools_repo}}" "{{devtools_dir}}"; }
+    @"{{devtools_dir}}/scripts/setup.sh" "{{devtools_repo}}" "{{devtools_dir}}"
+```
+
+No other changes are required. `devtools_repo`, `devtools_dir`,
+`_ensure-devtools`, and every `lint-*` recipe stay as-is. Behaviour is
+equivalent: first run clones; `setup.sh` handles the initial tag
+checkout and subsequent hourly update checks.
+
+Optional environment variables (unset by default):
+
+- `DEVBASE_CHECK_SKIP_UPDATES=1` — never check for updates.
+- `DEVBASE_CHECK_AUTO_UPDATE=1` — auto-update without prompting.
+
+See `examples/base-justfile`, `examples/java-justfile`, and
+`examples/node-justfile` for the full template.

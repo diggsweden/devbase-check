@@ -36,6 +36,15 @@ default:
 install:
     @mise install
 
+# ▪ Force-update this devbase-check install to latest tag (or --ref <ref>)
+#
+# Escape hatch for consumers whose own justfile doesn't (yet) have an
+# `update-devtools` recipe. Invoke from anywhere:
+#   just -f ~/.local/share/devbase-check/justfile update [--ref <ref>]
+[group('setup')]
+update *ARGS:
+    @"{{justfile_directory()}}/scripts/update.sh" "{{justfile_directory()}}" {{ ARGS }}
+
 # ==================================================================================== #
 # VERIFY - Quality assurance
 # ==================================================================================== #
