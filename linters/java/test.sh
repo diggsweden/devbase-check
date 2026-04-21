@@ -18,7 +18,7 @@ has_pom() {
 
 main() {
   print_header "JAVA TESTS (MAVEN)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete java || return 1
 
   if ! has_pom; then
     print_warning "No pom.xml found, skipping"

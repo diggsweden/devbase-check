@@ -30,7 +30,7 @@ find_bats_files() {
 
 main() {
   print_header "SHELL SCRIPT LINTING (SHELLCHECK)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete shellcheck || return 1
 
   local scripts
   scripts=$(find_shell_scripts)

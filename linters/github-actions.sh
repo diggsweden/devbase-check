@@ -12,7 +12,7 @@ source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 main() {
   print_header "GITHUB ACTIONS LINTING (ACTIONLINT)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete actionlint || return 1
 
   if [[ ! -d .github/workflows ]]; then
     print_info "No GitHub Actions workflows found to check"

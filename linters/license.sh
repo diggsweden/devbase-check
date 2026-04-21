@@ -12,7 +12,7 @@ source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 main() {
   print_header "LICENSE COMPLIANCE (REUSE)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete reuse || return 1
 
   if ! command -v reuse >/dev/null 2>&1; then
     print_warning "reuse not found in PATH - skipping license compliance check"

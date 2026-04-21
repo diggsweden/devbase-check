@@ -16,7 +16,7 @@ find_containerfiles() {
 
 main() {
   print_header "CONTAINER LINTING (HADOLINT)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete hadolint || return 1
 
   local files
   files=$(find_containerfiles)

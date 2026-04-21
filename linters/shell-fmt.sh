@@ -50,7 +50,7 @@ fix_format() {
 
 main() {
   print_header "SHELL SCRIPT FORMATTING (SHFMT)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete mvdan/sh || return 1
 
   local scripts
   scripts=$(find_shell_scripts)

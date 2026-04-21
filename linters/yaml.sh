@@ -84,7 +84,7 @@ fix_yaml() {
 
 main() {
   print_header "YAML LINTING (YAMLFMT)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete yamlfmt || return 1
 
   local files
   files=$(find_yaml_files)

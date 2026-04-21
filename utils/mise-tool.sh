@@ -42,8 +42,18 @@ mise_list_missing_pins() {
 }
 
 # Guard to place at the top of each linter's main(). Returns non-zero and
-# emits a fail marker when `mise install` is incomplete for this project.
-# Caller should `return 1` on non-zero to short-circuit the linter.
+# emits a fail marker when a tool this linter depends on is pinned in mise
+# but not installed. Caller should `return 1` on non-zero to short-circuit.
+#
+# Usage:
+#   fail_if_mise_install_incomplete <tool> [<tool>...]
+#     Fire only when one of the named tools matches a missing pin. Match is
+#     a substring of the pin key (e.g. "reuse" matches "pipx:reuse",
+#     "mvdan/sh" matches "aqua:mvdan/sh"). Use this from any linter whose
+#     primary tool is pinned in .mise.toml.
+#   fail_if_mise_install_incomplete  (no args)
+#     Fire on any missing pin — coarse fallback, preserved for callers that
+#     don't know their tool's pin key.
 #
 # Opt-outs (all silence this guard):
 #   DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1 — locked-down envs; fall through to
@@ -53,15 +63,44 @@ mise_list_missing_pins() {
 #   DEVBASE_CHECK_PREFLIGHT_DONE=1 — verify.sh already reported the state
 #     once; don't cascade the same message through every linter.
 fail_if_mise_install_incomplete() {
+  # ALLOW_SYSTEM_TOOLS: never gate; let the linter try whatever's on PATH.
   [[ "${DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS:-0}" == "1" ]] && return 0
-  [[ "${DEVBASE_CHECK_IGNORE_MISSING_LINTERS:-0}" == "1" ]] && return 0
-  [[ "${DEVBASE_CHECK_PREFLIGHT_DONE:-0}" == "1" ]] && return 0
+
   mise_has_missing_pins || return 0
-  print_error "mise install is incomplete — run: mise install"
-  local line
+
+  local all_missing=() relevant=() line
   while IFS= read -r line; do
-    [[ -n "$line" ]] && printf '  - %s\n' "$line"
+    [[ -n "$line" ]] && all_missing+=("$line")
   done < <(mise_list_missing_pins)
+
+  if (($# > 0)); then
+    local pin want
+    for pin in "${all_missing[@]}"; do
+      for want in "$@"; do
+        if [[ "$pin" == *"$want"* ]]; then
+          relevant+=("$pin")
+          break
+        fi
+      done
+    done
+    # Something is missing, but not this linter's tool — let it run.
+    ((${#relevant[@]})) || return 0
+  else
+    relevant=("${all_missing[@]}")
+  fi
+
+  # This linter's tool is affected. Behaviour depends on context.
+  if [[ "${DEVBASE_CHECK_IGNORE_MISSING_LINTERS:-0}" == "1" || "${DEVBASE_CHECK_PREFLIGHT_DONE:-0}" == "1" ]]; then
+    # User opted to proceed with a partial install (or preflight already
+    # reported the state). Skip this linter with a marker so verify.sh
+    # shows it as skipped in the summary, not passed or failed.
+    emit_status "skip" "mise pin missing"
+    return 1
+  fi
+
+  # Running directly — print the full error.
+  print_error "mise install is incomplete — run: mise install"
+  printf '  - %s\n' "${relevant[@]}"
   printf '  (to skip: --ignore-missing-linters or DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1)\n'
   emit_status "fail" "mise install incomplete"
   return 1

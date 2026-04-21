@@ -12,7 +12,6 @@ source "${SCRIPT_DIR}/../../utils/mise-tool.sh"
 
 main() {
   print_header "NODE ESLINT (JS/TS)"
-  fail_if_mise_install_incomplete || return 1
 
   if ! command -v npx >/dev/null 2>&1; then
     print_error "npx not found. Install Node.js and npm"

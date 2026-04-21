@@ -40,7 +40,6 @@ fix_prettier() {
 
 main() {
   print_header "NODE FORMATTING (PRETTIER)"
-  fail_if_mise_install_incomplete || return 1
 
   if ! command -v npx >/dev/null 2>&1; then
     print_error "npx not found. Install Node.js and npm"

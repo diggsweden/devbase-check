@@ -13,7 +13,7 @@ source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 main() {
   print_header "COMMIT HEALTH (GOMMITLINT)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete gommitlint || return 1
 
   local current_branch default_branch base_branch local_base remote_base
   current_branch=$(git branch --show-current)

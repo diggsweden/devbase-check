@@ -17,7 +17,7 @@ DEFAULT_EXCLUDE="${SCRIPT_DIR}/config/spotbugs-exclude.xml"
 
 main() {
   print_header "JAVA SPOTBUGS"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete java || return 1
 
   if [[ ! -f pom.xml ]]; then
     print_warning "No pom.xml found, skipping"

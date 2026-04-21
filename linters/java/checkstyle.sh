@@ -14,7 +14,7 @@ maven_opts=(--batch-mode --no-transfer-progress --errors -Dstyle.color=always)
 
 main() {
   print_header "JAVA CHECKSTYLE"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete java || return 1
 
   if [[ ! -f pom.xml ]]; then
     print_warning "No pom.xml found, skipping"

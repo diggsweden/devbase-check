@@ -45,7 +45,7 @@ fix_format() {
 
 main() {
   print_header "JAVA FORMATTING (FORMATTER)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete java || return 1
 
   if ! has_pom; then
     print_warning "No pom.xml found, skipping"

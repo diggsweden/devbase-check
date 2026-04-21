@@ -348,6 +348,52 @@ EOF
   assert_output "1"
 }
 
+@test "verify.sh --ignore-missing-linters: affected linter shows skipped in summary" {
+  # Recipe calls the real guard so we exercise the end-to-end flow:
+  # preflight → IGNORE_MISSING_LINTERS=1 in env → guard emits skip marker →
+  # verify.sh parses marker → summary prints it as skipped with details.
+  local colors_path="${BATS_TEST_DIRNAME}/../utils/colors.sh"
+  local mise_tool_path="${BATS_TEST_DIRNAME}/../utils/mise-tool.sh"
+
+  cat > justfile <<EOF
+default:
+    @echo "test"
+lint-version-control:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-commits:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-secrets:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+    #!/usr/bin/env bash
+    source '${colors_path}'
+    source '${mise_tool_path}'
+    fail_if_mise_install_incomplete reuse
+lint-container:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+EOF
+  _stub_mise_missing_pipx_reuse
+
+  run "$SCRIPT_DIR/verify.sh" --ignore-missing-linters
+
+  assert_success
+  assert_output --partial "License"
+  assert_output --partial "mise pin missing"
+  assert_output --partial "skipped"
+}
+
 @test "verify.sh --ignore-missing-linters warns once and proceeds" {
   cat > justfile << 'EOF'
 default:

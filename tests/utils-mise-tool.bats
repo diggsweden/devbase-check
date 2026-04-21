@@ -112,6 +112,74 @@ EOF
   assert_output --partial "rc=1"
 }
 
+@test "fail_if_mise_install_incomplete: tool arg that matches a missing pin fires" {
+  stub_mise '{"pipx:reuse":[{}],"aqua:mvdan/sh":[{}]}' 'pipx:reuse
+aqua:mvdan/sh'
+
+  run bash -c "
+    export DEVBASE_CHECK_MARKERS=1
+    source '${BATS_TEST_DIRNAME}/../utils/colors.sh'
+    source '${BATS_TEST_DIRNAME}/../utils/mise-tool.sh'
+    fail_if_mise_install_incomplete reuse
+    echo rc=\$?
+  "
+  assert_output --partial "- pipx:reuse"
+  refute_output --partial "- aqua:mvdan/sh"
+  assert_output --partial "rc=1"
+}
+
+@test "fail_if_mise_install_incomplete: under IGNORE_MISSING_LINTERS, emits skip instead of fail" {
+  # Preflight in verify.sh has already printed the user-facing message;
+  # each affected linter should quietly skip so the summary shows it as
+  # skipped, not passed or failed.
+  stub_mise '{"aqua:mvdan/sh":[{}]}' 'aqua:mvdan/sh'
+
+  run bash -c "
+    export DEVBASE_CHECK_MARKERS=1
+    export DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1
+    source '${BATS_TEST_DIRNAME}/../utils/colors.sh'
+    source '${BATS_TEST_DIRNAME}/../utils/mise-tool.sh'
+    fail_if_mise_install_incomplete mvdan/sh
+    echo rc=\$?
+  "
+  assert_output --partial "DEVBASE_CHECK_STATUS=skip"
+  assert_output --partial "DEVBASE_CHECK_DETAILS=mise pin missing"
+  assert_output --partial "rc=1"
+  refute_output --partial "mise install is incomplete"
+}
+
+@test "fail_if_mise_install_incomplete: under IGNORE_MISSING_LINTERS, unaffected tool still runs" {
+  # Only aqua:mvdan/sh missing; this linter cares about yamlfmt → proceed.
+  stub_mise '{"aqua:mvdan/sh":[{}]}' 'aqua:mvdan/sh'
+
+  run bash -c "
+    export DEVBASE_CHECK_MARKERS=1
+    export DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1
+    source '${BATS_TEST_DIRNAME}/../utils/colors.sh'
+    source '${BATS_TEST_DIRNAME}/../utils/mise-tool.sh'
+    fail_if_mise_install_incomplete yamlfmt
+    echo rc=\$?
+  "
+  assert_output --partial "rc=0"
+  refute_output --partial "DEVBASE_CHECK_STATUS=skip"
+}
+
+@test "fail_if_mise_install_incomplete: tool arg that matches no missing pin stays quiet" {
+  # aqua:mvdan/sh is missing; but this linter only cares about yamlfmt, which is fine.
+  stub_mise '{"aqua:mvdan/sh":[{}]}' 'aqua:mvdan/sh'
+
+  run bash -c "
+    export DEVBASE_CHECK_MARKERS=1
+    source '${BATS_TEST_DIRNAME}/../utils/colors.sh'
+    source '${BATS_TEST_DIRNAME}/../utils/mise-tool.sh'
+    fail_if_mise_install_incomplete yamlfmt
+    echo rc=\$?
+  "
+  assert_output --partial "rc=0"
+  refute_output --partial "mise install is incomplete"
+  refute_output --partial "DEVBASE_CHECK_STATUS=fail"
+}
+
 @test "DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1 silences the incomplete-install check" {
   stub_mise '{"pipx:reuse":[{"version":"1.0"}]}'
 

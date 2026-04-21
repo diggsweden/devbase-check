@@ -57,7 +57,7 @@ fix_markdown() {
 
 main() {
   print_header "MARKDOWN LINTING (RUMDL)"
-  fail_if_mise_install_incomplete || return 1
+  fail_if_mise_install_incomplete rumdl || return 1
 
   local files
   files=$(find_markdown_files)
