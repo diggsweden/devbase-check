@@ -18,7 +18,7 @@
         "aqua:koalaman/shellcheck",
         "aqua:mvdan/sh",
         "aqua:google/yamlfmt",
-        "ubi:rvben/rumdl",
+        "aqua:rvben/rumdl",
         "aqua:hadolint/hadolint"
       ],
       "addLabels": [
