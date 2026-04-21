@@ -15,6 +15,9 @@ source "${SCRIPT_DIR}/../utils/colors.sh"
 # shellcheck source=../summary/common.sh
 source "${SCRIPT_DIR}/../summary/common.sh"
 
+# shellcheck source=../utils/mise-tool.sh
+source "${SCRIPT_DIR}/../utils/mise-tool.sh"
+
 # Base linters
 LINTERS=(
   "Working Tree|git|just lint-version-control"
@@ -188,9 +191,95 @@ print_summary() {
   return $summary_exit
 }
 
+print_usage() {
+  cat <<'EOF'
+Usage: verify.sh [OPTIONS]
+
+Runs all configured linters and prints a summary. Before running, a
+preflight checks that every tool pinned in .mise.toml is installed. If
+any pin is missing, verify.sh fails fast with a single actionable error
+("run: mise install") instead of letting each linter fail separately.
+
+Options:
+  --ignore-missing-linters   Proceed even when mise pins are missing.
+                             Linters whose tool isn't installed emit a
+                             skip marker; the rest run normally. Useful
+                             in CI when a subset of tools is unavailable.
+  -h, --help                 Show this help.
+
+Environment:
+  DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1     Skip the mise-pin check entirely
+                                         and fall back to whatever tool is
+                                         on PATH (with a visible warning).
+                                         Intended for locked-down envs.
+  DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1 Same as --ignore-missing-linters.
+EOF
+}
+
+parse_args() {
+  for arg in "$@"; do
+    case "$arg" in
+    --ignore-missing-linters)
+      export DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1
+      ;;
+    -h | --help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      printf 'verify.sh: unknown argument: %s\n\n' "$arg" >&2
+      print_usage >&2
+      exit 2
+      ;;
+    esac
+  done
+}
+
+# Single preflight so a broken mise install doesn't cascade the same error
+# through every linter. Three outcomes:
+#   - no missing pins: proceed silently.
+#   - missing pins + opt-out (flag/env): print one warning + proceed.
+#   - missing pins + no opt-out: print one error + exit 1.
+# Either way, DEVBASE_CHECK_PREFLIGHT_DONE=1 is exported so the per-linter
+# guard in utils/mise-tool.sh becomes a no-op.
+mise_preflight() {
+  mise_has_missing_pins || return 0
+
+  local missing=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && missing+=("$line")
+  done < <(mise_list_missing_pins)
+
+  if [[ "${DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS:-0}" == "1" ]]; then
+    print_warning "mise install is incomplete; falling back to system tools"
+    ((${#missing[@]})) && printf '  - %s\n' "${missing[@]}"
+    printf '\n'
+    return 0
+  fi
+
+  if [[ "${DEVBASE_CHECK_IGNORE_MISSING_LINTERS:-0}" == "1" ]]; then
+    print_warning "mise install is incomplete; affected linters will be skipped"
+    ((${#missing[@]})) && printf '  - %s\n' "${missing[@]}"
+    printf '  Fix: mise install\n\n'
+    return 0
+  fi
+
+  print_error "mise install is incomplete — run: mise install"
+  ((${#missing[@]})) && printf '  - %s\n' "${missing[@]}"
+  printf '  (to skip: --ignore-missing-linters or DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1)\n'
+  return 1
+}
+
 main() {
+  parse_args "$@"
+
   # Load appropriate summary module based on CI environment
   load_summary_module
+
+  if ! mise_preflight; then
+    return 1
+  fi
+  export DEVBASE_CHECK_PREFLIGHT_DONE=1
 
   detect_language_linters
 
@@ -204,4 +293,4 @@ main() {
   return $((linter_exit || summary_exit))
 }
 
-main
+main "$@"

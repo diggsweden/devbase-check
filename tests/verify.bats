@@ -304,3 +304,87 @@ EOF
   assert_output --partial "Node ESLint"
   assert_output --partial "1 failed"
 }
+
+# =============================================================================
+# Preflight: incomplete mise install
+# =============================================================================
+
+# Stub `mise` on PATH so the preflight thinks a pinned tool is missing.
+# `mise ls --missing --json` returns a non-empty object; `mise ls --missing`
+# lists the pin names. Everything else is a no-op.
+_stub_mise_missing_pipx_reuse() {
+  mkdir -p "${TEST_DIR}/bin"
+  cat >"${TEST_DIR}/bin/mise" <<'EOF'
+#!/usr/bin/env bash
+case "$1 $2 $3" in
+  "ls --missing --json") printf '%s' '{"pipx:reuse":[{"version":"6.2.0"}]}'; exit 0 ;;
+  "ls --missing ")       printf 'pipx:reuse\n'; exit 0 ;;
+esac
+case "$1 $2" in
+  "ls --missing")        printf 'pipx:reuse\n'; exit 0 ;;
+esac
+exit 0
+EOF
+  chmod +x "${TEST_DIR}/bin/mise"
+  export PATH="${TEST_DIR}/bin:${PATH}"
+}
+
+@test "verify.sh fails fast with one message when a mise pin is missing" {
+  cat > justfile << 'EOF'
+default:
+    @echo "test"
+EOF
+  _stub_mise_missing_pipx_reuse
+
+  run "$SCRIPT_DIR/verify.sh"
+
+  assert_failure
+  assert_output --partial "mise install is incomplete"
+  assert_output --partial "pipx:reuse"
+  assert_output --partial "--ignore-missing-linters"
+  # Cascade guard: the per-linter guard should NOT have run, so we don't see
+  # the error more than once (once from the preflight itself).
+  run bash -c "grep -c 'mise install is incomplete' <<<\"$output\""
+  assert_output "1"
+}
+
+@test "verify.sh --ignore-missing-linters warns once and proceeds" {
+  cat > justfile << 'EOF'
+default:
+    @echo "test"
+lint-version-control:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-commits:
+    @printf "DEVBASE_CHECK_STATUS=skip\n"
+    @printf "DEVBASE_CHECK_DETAILS=not in PATH\n"
+lint-secrets:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+    @printf "DEVBASE_CHECK_STATUS=skip\n"
+    @printf "DEVBASE_CHECK_DETAILS=not in PATH\n"
+lint-container:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+EOF
+  _stub_mise_missing_pipx_reuse
+
+  run "$SCRIPT_DIR/verify.sh" --ignore-missing-linters
+
+  assert_success
+  assert_output --partial "affected linters will be skipped"
+  assert_output --partial "pipx:reuse"
+  # Preflight message appears once, not once per linter.
+  run bash -c "grep -c 'affected linters will be skipped' <<<\"$output\""
+  assert_output "1"
+}

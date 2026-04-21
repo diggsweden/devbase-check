@@ -34,17 +34,35 @@ mise_has_missing_pins() {
   [[ -n "$json" && "$json" != "{}" && "$json" != "[]" ]]
 }
 
+# Prints the missing pin names one per line (or nothing). Used by the
+# preflight in verify.sh to show the user what's actually broken.
+mise_list_missing_pins() {
+  command -v mise >/dev/null 2>&1 || return 0
+  mise ls --missing 2>/dev/null | awk 'NF{print $1}'
+}
+
 # Guard to place at the top of each linter's main(). Returns non-zero and
 # emits a fail marker when `mise install` is incomplete for this project.
 # Caller should `return 1` on non-zero to short-circuit the linter.
 #
-# Opt-out: DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1 silences the check so
-# linters run with whatever's on PATH. Intended for locked-down
-# environments where mise install cannot complete.
+# Opt-outs (all silence this guard):
+#   DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1 — locked-down envs; fall through to
+#     whatever tool is on PATH.
+#   DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1 — run anyway; each linter's own
+#     tool-specific check will emit skip for the tools it needs.
+#   DEVBASE_CHECK_PREFLIGHT_DONE=1 — verify.sh already reported the state
+#     once; don't cascade the same message through every linter.
 fail_if_mise_install_incomplete() {
   [[ "${DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS:-0}" == "1" ]] && return 0
+  [[ "${DEVBASE_CHECK_IGNORE_MISSING_LINTERS:-0}" == "1" ]] && return 0
+  [[ "${DEVBASE_CHECK_PREFLIGHT_DONE:-0}" == "1" ]] && return 0
   mise_has_missing_pins || return 0
   print_error "mise install is incomplete — run: mise install"
+  local line
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && printf '  - %s\n' "$line"
+  done < <(mise_list_missing_pins)
+  printf '  (to skip: --ignore-missing-linters or DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1)\n'
   emit_status "fail" "mise install incomplete"
   return 1
 }

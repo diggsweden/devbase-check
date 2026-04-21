@@ -42,8 +42,8 @@ install:
 
 # ▪ Run all linters with summary
 [group('verify')]
-verify:
-    @./scripts/verify.sh
+verify *ARGS:
+    @./scripts/verify.sh {{ ARGS }}
 
 # ==================================================================================== #
 # LINT - Code quality checks
@@ -51,12 +51,12 @@ verify:
 
 # ▪ Run all base linters (universal linters for any project)
 [group('lint')]
-lint-base:
-    @./scripts/verify.sh
+lint-base *ARGS:
+    @./scripts/verify.sh {{ ARGS }}
 
 # ▪ Run all linters (default, uses lint-base)
 [group('lint')]
-lint-all: lint-base
+lint-all *ARGS: (lint-base ARGS)
 
 # Validate version control
 [group('lint')]

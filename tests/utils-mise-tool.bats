@@ -28,16 +28,17 @@ teardown() {
   common_teardown
 }
 
-# Create a mise stub that echoes the given JSON for `mise ls --missing ...`.
-# Default is an empty object (no missing pins).
+# Create a mise stub. First arg is the JSON object for `mise ls --missing --json`.
+# Second arg (optional) is the newline-separated pin names for plain `mise ls --missing`.
 stub_mise() {
-  local missing="${1-{\}}"
+  local json="${1-{\}}"
+  local plain="${2-}"
   cat >"${TEST_DIR}/bin/mise" <<EOF
 #!/usr/bin/env bash
-if [[ "\$1 \$2" == "ls --missing" ]] || [[ "\$1 \$2" == "ls --missing --json" ]]; then
-  printf '%s' '${missing}'
-  exit 0
-fi
+case "\$1 \$2 \$3" in
+  "ls --missing --json") printf '%s' '${json}'; exit 0 ;;
+  "ls --missing ")       printf '%s' '${plain}'; exit 0 ;;
+esac
 exit 0
 EOF
   chmod +x "${TEST_DIR}/bin/mise"
@@ -96,7 +97,7 @@ EOF
 @test "fail_if_mise_install_incomplete: fails loudly with a fail marker when pins are missing" {
   # This is the bug the whole mechanism exists to catch: mise install silently
   # incomplete (pipx:reuse matches the real .mise.toml pin key).
-  stub_mise '{"pipx:reuse":[{"version":"1.0"}]}'
+  stub_mise '{"pipx:reuse":[{"version":"1.0"}]}' 'pipx:reuse'
 
   run bash -c "
     export DEVBASE_CHECK_MARKERS=1
@@ -106,6 +107,7 @@ EOF
     echo rc=\$?
   "
   assert_output --partial "mise install is incomplete"
+  assert_output --partial "- pipx:reuse"
   assert_output --partial "DEVBASE_CHECK_STATUS=fail"
   assert_output --partial "rc=1"
 }

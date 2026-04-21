@@ -356,6 +356,28 @@ Example `development/spotbugs-exclude.xml`:
 </FindBugsFilter>
 ```
 
+### Handling an Incomplete mise Install
+
+mise is the source of truth for which tool version runs. Before running linters, `verify.sh` checks that every tool pinned in `.mise.toml` is installed. If any pin is missing, it fails fast with a single actionable message instead of letting each linter fail separately:
+
+```text
+✗ mise install is incomplete — run: mise install
+  - pipx:reuse
+
+  To run the linters that still work, add flag:
+     --ignore-missing-linters
+```
+
+Opt-outs, in order of preference:
+
+| Option | Behaviour | When to use |
+|--------|-----------|-------------|
+| `just verify --ignore-missing-linters` | Run anyway. Affected linters emit a skip marker; the rest run normally. | CI jobs where only a subset of tools is available. |
+| `DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1` | Same as the flag. | Set once in a shell/CI environment. |
+| `DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1` | Skip the check entirely; fall back to whatever tool is on PATH (with a warning). `check-tools.sh` labels each tool as `(mise)` or `(system)` so you can tell. | Locked-down environments where `mise install` can't complete. |
+
+`just verify --help` prints the same summary.
+
 ### Custom Repository Location
 
 Override the default repository URL via environment variable:

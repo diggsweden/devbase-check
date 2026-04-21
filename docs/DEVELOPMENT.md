@@ -30,11 +30,19 @@
    sudo apt install pipx
    ```
 
-   Linters verify each tool comes from mise. If mise has the tool pinned but
-   not installed, the linter fails with an actionable message (run
-   `mise install`). In locked-down environments where you can't fix the
-   install, set `DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1` to fall back to a system
-   tool with a visible warning.
+   Linters verify each tool comes from mise. If mise has a tool pinned but
+   not installed, `just verify` fails fast with a single actionable message
+   (run `mise install`) instead of letting each linter fail separately.
+
+   Opt-outs, in order of preference:
+
+   - `just verify --ignore-missing-linters` — run anyway; linters whose
+     tool isn't installed are skipped, the rest run normally. Same as
+     setting `DEVBASE_CHECK_IGNORE_MISSING_LINTERS=1`.
+   - `DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1` — skip the mise-pin check and
+     fall back to whatever tool is on PATH, with a visible warning.
+     Intended for locked-down environments where `mise install` can't
+     complete.
 
 4. Install project tools:
 
