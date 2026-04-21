@@ -8,14 +8,9 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
+source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 readonly MODE="${1:-check}"
-
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
 
 find_shell_scripts() {
   find . -type f \( -name "*.sh" -o -name "*.bash" \) \
@@ -55,6 +50,7 @@ fix_format() {
 
 main() {
   print_header "SHELL SCRIPT FORMATTING (SHFMT)"
+  fail_if_mise_install_incomplete || return 1
 
   local scripts
   scripts=$(find_shell_scripts)

@@ -8,22 +8,9 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../utils/colors.sh"
+source "${SCRIPT_DIR}/../../utils/mise-tool.sh"
 
 maven_opts=(--batch-mode --no-transfer-progress --errors -Dstyle.color=always)
-
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
-
-check_maven() {
-  if ! command -v mvn >/dev/null 2>&1; then
-    print_error "mvn not found. Install with: mise install maven"
-    emit_status "fail" "failed"
-    return 1
-  fi
-}
 
 has_pom() {
   [[ -f pom.xml ]]
@@ -31,6 +18,7 @@ has_pom() {
 
 main() {
   print_header "JAVA TESTS (MAVEN)"
+  fail_if_mise_install_incomplete || return 1
 
   if ! has_pom; then
     print_warning "No pom.xml found, skipping"
@@ -38,7 +26,9 @@ main() {
     return 0
   fi
 
-  if ! check_maven; then
+  if ! command -v mvn >/dev/null 2>&1; then
+    print_error "mvn not found. Install with: mise install maven"
+    emit_status "fail" "failed"
     return 1
   fi
 

@@ -23,17 +23,23 @@
 
    Then restart your terminal.
 
-3. Install pipx (needed for reuse license linting):
+3. Install pipx (needed for `pipx:reuse` license linting):
 
    ```bash
    # Debian/Ubuntu
    sudo apt install pipx
    ```
 
+   Linters verify each tool comes from mise. If mise has the tool pinned but
+   not installed, the linter fails with an actionable message (run
+   `mise install`). In locked-down environments where you can't fix the
+   install, set `DEVBASE_CHECK_ALLOW_SYSTEM_TOOLS=1` to fall back to a system
+   tool with a visible warning.
+
 4. Install project tools:
 
    ```bash
-   mise install
+   just install
    ```
 
 5. Run quality checks:
@@ -71,7 +77,7 @@
    brew install bash
    ```
 
-4. Install pipx (needed for reuse license linting):
+4. Install pipx (needed for `pipx:reuse` license linting):
 
    ```bash
    brew install pipx
@@ -80,7 +86,7 @@
 5. Install project tools:
 
    ```bash
-   mise install
+   just install
    ```
 
 6. Run quality checks:

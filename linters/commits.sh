@@ -9,15 +9,11 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
 source "${SCRIPT_DIR}/../utils/git-utils.sh"
-
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
+source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 main() {
   print_header "COMMIT HEALTH (GOMMITLINT)"
+  fail_if_mise_install_incomplete || return 1
 
   local current_branch default_branch base_branch local_base remote_base
   current_branch=$(git branch --show-current)
@@ -63,7 +59,7 @@ main() {
     return 0
   fi
 
-  if $gommitlint_cmd validate --base-branch="${base_branch}" 2>/dev/null; then
+  if "$gommitlint_cmd" validate --base-branch="${base_branch}" 2>/dev/null; then
     print_success "Commit health check passed"
     emit_status "pass" "ok"
     return 0

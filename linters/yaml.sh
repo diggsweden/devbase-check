@@ -8,14 +8,9 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
+source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 readonly ACTION="${1:-check}"
-
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
 
 # Default config with standard exclusions
 readonly DEFAULT_CONFIG="${SCRIPT_DIR}/config/.yamlfmt"
@@ -89,6 +84,7 @@ fix_yaml() {
 
 main() {
   print_header "YAML LINTING (YAMLFMT)"
+  fail_if_mise_install_incomplete || return 1
 
   local files
   files=$(find_yaml_files)

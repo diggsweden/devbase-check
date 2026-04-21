@@ -8,14 +8,9 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../utils/colors.sh"
+source "${SCRIPT_DIR}/../../utils/mise-tool.sh"
 
 readonly ACTION="${1:-check}"
-
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
 
 check_prettier() {
   npx prettier --check .
@@ -45,6 +40,7 @@ fix_prettier() {
 
 main() {
   print_header "NODE FORMATTING (PRETTIER)"
+  fail_if_mise_install_incomplete || return 1
 
   if ! command -v npx >/dev/null 2>&1; then
     print_error "npx not found. Install Node.js and npm"

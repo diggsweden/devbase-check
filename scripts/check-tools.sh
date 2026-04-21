@@ -8,6 +8,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
+source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 activate_mise() {
   if command -v mise >/dev/null 2>&1; then
@@ -18,12 +19,21 @@ activate_mise() {
 check_tool() {
   local tool="$1"
   if command -v "$tool" >/dev/null 2>&1; then
-    print_success "$tool"
+    # Annotate where the tool came from so users can spot a stray system
+    # copy when a mise-pinned version was expected.
+    if [[ -n "$(mise_tool_path "$tool")" ]]; then
+      print_success "$tool (mise)"
+    else
+      print_success "$tool (system)"
+    fi
     return 0
+  fi
+  if mise_has_missing_pins; then
+    print_error "$tool (mise install is incomplete — run: mise install)"
   else
     print_error "$tool"
-    return 1
   fi
+  return 1
 }
 
 check_devtools() {

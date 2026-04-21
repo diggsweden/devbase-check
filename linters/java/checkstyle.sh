@@ -8,17 +8,13 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../utils/colors.sh"
+source "${SCRIPT_DIR}/../../utils/mise-tool.sh"
 
 maven_opts=(--batch-mode --no-transfer-progress --errors -Dstyle.color=always)
 
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
-
 main() {
   print_header "JAVA CHECKSTYLE"
+  fail_if_mise_install_incomplete || return 1
 
   if [[ ! -f pom.xml ]]; then
     print_warning "No pom.xml found, skipping"

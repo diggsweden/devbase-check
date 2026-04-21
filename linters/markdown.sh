@@ -8,16 +8,11 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../utils/colors.sh"
+source "${SCRIPT_DIR}/../utils/mise-tool.sh"
 
 readonly ACTION="${1:-check}"
 shift || true
 readonly DISABLE="${1:-MD013}"
-
-emit_status() {
-  [[ "${DEVBASE_CHECK_MARKERS:-0}" == "1" ]] || return 0
-  printf "DEVBASE_CHECK_STATUS=%s\n" "$1"
-  [[ -n "${2:-}" ]] && printf "DEVBASE_CHECK_DETAILS=%s\n" "$2"
-}
 
 readonly EXCLUDE=".github-shared,node_modules,vendor,target,CHANGELOG.md"
 
@@ -62,6 +57,7 @@ fix_markdown() {
 
 main() {
   print_header "MARKDOWN LINTING (RUMDL)"
+  fail_if_mise_install_incomplete || return 1
 
   local files
   files=$(find_markdown_files)
