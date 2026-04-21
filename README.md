@@ -47,10 +47,12 @@ That's it.
 
 ### Updates
 
-Run `just setup-devtools` again to check for updates:
+Two update paths:
 
-- **Interactive**: Prompts "Update available: vX.Y.Z. Update? [y/N]"
-- **CI/non-interactive**: Auto-updates to latest tag
+- **Passive** — `just setup-devtools` checks for updates at most once an hour. Interactive terminals get a `[y/N]` prompt; CI/non-interactive shells auto-update to the latest tag. Offline/flaky-network runs stay silent and retry on the next invocation.
+- **On-demand** — `just update-devtools` force-updates right now, no TTL, no prompt. Pass `--ref <branch-or-tag>` to try an unreleased branch or roll back to a specific tag.
+
+Upgrading from an older version? See [`docs/MIGRATION-0.5.0.md`](docs/MIGRATION-0.5.0.md) for the unstick paths if your install is stale.
 
 ## How it works
 
