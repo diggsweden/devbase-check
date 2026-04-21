@@ -207,10 +207,11 @@ teardown() {
   touch "$fake_dir/.last-update-check"
   env TZ=XXX0 touch -d "$(TZ=XXX+1:01 date +%FT%T)" "$fake_dir/.last-update-check"
   
-  # Run setup in non-interactive mode (CI=true auto-updates)
-  export CI=true
+  # Non-interactive no longer auto-updates by default (CI/Renovate owns
+  # version bumps). Use the explicit opt-in.
+  export DEVBASE_CHECK_AUTO_UPDATE=1
   run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir"
-  
+
   assert_success
   assert_output --partial "Updated to v1.0.1"
 
@@ -218,6 +219,41 @@ teardown() {
   cd "$fake_dir"
   run git describe --tags --abbrev=0
   assert_output "v1.0.1"
+}
+
+@test "setup.sh does NOT auto-update on non-tty (CI/pipe) without opt-in" {
+  local fake_dir="${TEST_DIR}/devtools"
+  local remote_dir="${TEST_DIR}/remote.git"
+
+  mkdir -p "$fake_dir"
+  cd "$fake_dir"
+  export GIT_EDITOR=true
+  init_isolated_git_repo
+  git tag -a v1.0.0 -m "v1.0.0"
+  echo "new" >file.txt
+  git add file.txt
+  git commit -q -m "Update"
+  git tag -a v1.0.1 -m "v1.0.1"
+
+  git init -q --bare "$remote_dir"
+  git remote add origin "$remote_dir"
+  git push --all origin 2>/dev/null
+  git push --tags origin 2>/dev/null
+
+  git checkout v1.0.0 --quiet
+  touch "$fake_dir/.last-update-check"
+  env TZ=XXX0 touch -d "$(TZ=XXX+1:01 date +%FT%T)" "$fake_dir/.last-update-check"
+
+  # CI env set, but no DEVBASE_CHECK_AUTO_UPDATE — must NOT update.
+  export CI=true
+  run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir"
+
+  assert_success
+  refute_output --partial "Updated to v1.0.1"
+
+  cd "$fake_dir"
+  run git describe --tags --abbrev=0
+  assert_output "v1.0.0"
 }
 
 @test "setup.sh prints the recipe-migration tip once, then stays silent" {

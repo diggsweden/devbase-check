@@ -165,6 +165,8 @@ The first time the new `setup.sh` runs in your install, it prints a one-time tip
 
 ## Behavioural changes to be aware of
 
+- **CI no longer auto-updates devbase-check.** Previously, `setup.sh` auto-applied the latest release tag whenever stdin wasn't a tty or `$CI=true` was set. From 0.5.0 onward, only `DEVBASE_CHECK_AUTO_UPDATE=1` triggers auto-update — interactive shells get the `[y/N]` prompt, and everything else (CI, pipes, background jobs) leaves the installed version alone. Version management in CI is the caller's responsibility: use Renovate (or equivalent) to bump a pinned tag in your project. If you want the old track-latest behaviour, set `DEVBASE_CHECK_AUTO_UPDATE=1` explicitly; if you want full pin-and-forget, set `DEVBASE_CHECK_SKIP_UPDATES=1` to skip the check entirely.
+
 - **`setup.sh` is silent on fetch failure.** You will no longer see `Could not check for updates (no network connection)`. If you had log-scraping on that string, update it. The marker is also no longer touched when the fetch fails, so next-run behaviour changes from "wait an hour" to "retry immediately."
 
 - **Per-linter guard is now tool-specific.** Calling `./linters/<x>.sh` directly only errors on a missing mise pin if **its** tool is the one affected. Node linters (`eslint`, `prettier`, `tsc`) no longer call the guard at all — they don't have mise pins (they use `npx`).
