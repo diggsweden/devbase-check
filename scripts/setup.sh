@@ -68,14 +68,19 @@ check_for_updates() {
 
   [[ "$current" == "$latest" || "$latest" == "unknown" ]] && return 0
 
-  # Auto-update in CI, non-interactive shells, or when explicitly opted in.
-  if [[ "${CI:-false}" == "true" ]] ||
-    [[ "${DEVBASE_CHECK_AUTO_UPDATE:-0}" == "1" ]] ||
-    [[ ! -t 0 ]]; then
+  # Explicit opt-in: auto-update regardless of shell type.
+  if [[ "${DEVBASE_CHECK_AUTO_UPDATE:-0}" == "1" ]]; then
     print_info "Auto-updating devtools to $latest"
     update_to_version "$latest"
     return 0
   fi
+
+  # Non-interactive (CI, pipes, background jobs): do NOT auto-update.
+  # Version management in CI is the caller's responsibility — pin the
+  # devbase-check version via Renovate or equivalent. Use
+  # DEVBASE_CHECK_AUTO_UPDATE=1 to opt in if you really want
+  # track-latest-tag behaviour.
+  [[ ! -t 0 ]] && return 0
 
   # Interactive: ask once per check. A "no" means "not now" — the hour TTL
   # will let the next run ask again until the user accepts or a newer tag
