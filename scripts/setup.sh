@@ -33,17 +33,6 @@ update_to_version() {
   git -C "$DIR" stash --include-untracked --quiet 2>/dev/null || true
   git -C "$DIR" checkout "$version" --quiet
   print_success "Updated to $version"
-  maybe_nudge_recipe_migration
-}
-
-# One-time nudge for users whose project justfile still has the old
-# ~22-line setup-devtools recipe. Harmless if they've already migrated —
-# the tip prints once per install dir, then is silenced by a marker.
-maybe_nudge_recipe_migration() {
-  local flag="$DIR/.tip-minimal-recipe-shown"
-  [[ -f "$flag" ]] && return 0
-  print_info "Tip: a shorter setup-devtools recipe is available — see ${DIR}/examples/base-justfile"
-  touch "$flag"
 }
 
 clone_repo() {
@@ -59,7 +48,6 @@ clone_repo() {
     git -C "$DIR" checkout "$latest" --quiet
   fi
   print_success "Installed devtools ${latest:-main}"
-  maybe_nudge_recipe_migration
 }
 
 check_for_updates() {

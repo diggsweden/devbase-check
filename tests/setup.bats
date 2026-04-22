@@ -245,8 +245,11 @@ teardown() {
   env TZ=XXX0 touch -d "$(TZ=XXX+1:01 date +%FT%T)" "$fake_dir/.last-update-check"
 
   # CI env set, but no DEVBASE_CHECK_AUTO_UPDATE — must NOT update.
+  # Redirect stdin from /dev/null so [[ -t 0 ]] is false even when bats
+  # is invoked from an interactive terminal; otherwise setup.sh falls
+  # through to the `read -p` prompt and the test hangs.
   export CI=true
-  run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir"
+  run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir" </dev/null
 
   assert_success
   refute_output --partial "Updated to v1.0.1"
@@ -256,39 +259,3 @@ teardown() {
   assert_output "v1.0.0"
 }
 
-@test "setup.sh prints the recipe-migration tip once, then stays silent" {
-  local fake_dir="${TEST_DIR}/devtools"
-  local remote_dir="${TEST_DIR}/remote.git"
-
-  # Bare remote: one tagged commit plus an untagged commit on top, so
-  # a fresh bare clone's HEAD is past the latest tag — same state the
-  # new consumer bootstrap leaves things in.
-  git init -q --bare "$remote_dir"
-  local work="${TEST_DIR}/work"
-  mkdir -p "$work" && cd "$work"
-  export GIT_EDITOR=true
-  init_isolated_git_repo
-  git tag -a v1.0.0 -m "v1.0.0"
-  echo "post" >file2.txt
-  git add file2.txt
-  git commit -q -m "post-release"
-  git remote add origin "$remote_dir"
-  git push --all origin 2>/dev/null
-  git push --tags origin 2>/dev/null
-
-  git clone --quiet "$remote_dir" "$fake_dir"
-
-  # First run completes the install; tip should appear.
-  run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir"
-  assert_success
-  assert_output --partial "shorter setup-devtools recipe"
-  assert_file_exists "$fake_dir/.tip-minimal-recipe-shown"
-
-  # Age the update-check marker so the next run doesn't short-circuit.
-  env TZ=XXX0 touch -d "$(TZ=XXX+1:01 date +%FT%T)" "$fake_dir/.last-update-check"
-
-  # Second run — tip should not re-appear because the flag is set.
-  run "$SCRIPT_DIR/setup.sh" "$remote_dir" "$fake_dir"
-  assert_success
-  refute_output --partial "shorter setup-devtools recipe"
-}

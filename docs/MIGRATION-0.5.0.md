@@ -4,9 +4,7 @@ SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
 SPDX-License-Identifier: CC0-1.0
 -->
 
-
-
-## For stuck users — how to unstick
+# For stuck users — how to unstick
 
 If you've been seeing (or silently missing) `Could not check for updates (no network connection)` warnings, or your devbase-check install hasn't moved in months, you're likely caught in the old recipe's pre-fetch trap. Pick one:
 
@@ -51,8 +49,6 @@ just update-devtools --ref v0.4.2           # roll back to a specific tag
 just update-devtools --help
 ```
 
-
-
 ## Consumer justfile updates (optional but recommended)
 
 The example justfiles (`examples/{base,java,node}-justfile`) have been simplified.
@@ -96,10 +92,7 @@ update-devtools *ARGS:
     @"{{devtools_dir}}/scripts/update.sh" "{{devtools_dir}}" {{ ARGS }}
 ```
 
-
 ---
-
-
 
 If you hit anything not covered here, the escape hatch is always:
 

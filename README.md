@@ -49,7 +49,7 @@ That's it.
 
 Two update paths:
 
-- **Passive** — `just setup-devtools` checks for updates at most once an hour. Interactive terminals get a `[y/N]` prompt; CI/non-interactive shells auto-update to the latest tag. Offline/flaky-network runs stay silent and retry on the next invocation.
+- **Passive** — `just setup-devtools` checks for updates at most once an hour. Interactive terminals get a `[y/N]` prompt. Non-interactive shells (CI, pipes) leave the installed version alone — pin via Renovate and bump through PRs. Set `DEVBASE_CHECK_AUTO_UPDATE=1` to opt in to auto-update. Offline/flaky-network runs stay silent and retry on the next invocation.
 - **On-demand** — `just update-devtools` force-updates right now, no TTL, no prompt. Pass `--ref <branch-or-tag>` to try an unreleased branch or roll back to a specific tag.
 
 Upgrading from an older version? See [`docs/MIGRATION-0.5.0.md`](docs/MIGRATION-0.5.0.md) for the unstick paths if your install is stale.
