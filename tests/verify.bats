@@ -305,6 +305,86 @@ EOF
   assert_output --partial "1 failed"
 }
 
+@test "verify.sh auto-detects rust sub-recipes and ignores umbrella lint-rust" {
+  cat > justfile << 'EOF'
+lint-version-control:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-commits:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-secrets:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-container:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-rust:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-rust-clippy:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-rust-fmt:
+    @printf "DEVBASE_CHECK_STATUS=fail\n"
+    @printf "DEVBASE_CHECK_DETAILS=needs formatting\n"
+EOF
+
+  run "$SCRIPT_DIR/verify.sh"
+
+  assert_failure
+  # Sub-recipes are picked up
+  assert_output --partial "Rust Clippy"
+  assert_output --partial "Rust Fmt"
+  # Umbrella is intentionally excluded (matches lint-java/lint-node behaviour)
+  refute_output --partial "| Rust |"
+  # Sub-recipe failure surfaces correctly
+  assert_output --partial "1 failed"
+}
+
+@test "verify.sh auto-detects rust-audit recipe outside the lint umbrella" {
+  cat > justfile << 'EOF'
+lint-version-control:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-commits:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-secrets:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-container:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+rust-audit:
+    @printf "DEVBASE_CHECK_STATUS=pass\n"
+EOF
+
+  run "$SCRIPT_DIR/verify.sh"
+
+  assert_success
+  assert_output --partial "Rust Audit"
+  assert_output --partial "cargo-audit"
+}
+
 # =============================================================================
 # Preflight: incomplete mise install
 # =============================================================================

@@ -80,6 +80,19 @@ detect_language_linters() {
   if grep -qE "^\s+lint-node-ts-types(\s|#|$)" <<<"$recipes"; then
     LINTERS+=("Node Types|tsc|just lint-node-ts-types")
   fi
+
+  # Rust linters - check for individual recipes
+  if grep -qE "^\s+lint-rust-clippy(\s|#|$)" <<<"$recipes"; then
+    LINTERS+=("Rust Clippy|clippy|just lint-rust-clippy")
+  fi
+  if grep -qE "^\s+lint-rust-fmt(\s|#|$)" <<<"$recipes"; then
+    LINTERS+=("Rust Fmt|rustfmt|just lint-rust-fmt")
+  fi
+  # Audit lives outside the lint umbrella but `just verify` still surfaces it
+  # in the summary so security regressions are visible alongside lint state.
+  if grep -qE "^\s+rust-audit(\s|#|$)" <<<"$recipes"; then
+    LINTERS+=("Rust Audit|cargo-audit|just rust-audit")
+  fi
 }
 
 run_linters() {

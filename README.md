@@ -35,6 +35,7 @@ Reusable linting for [Just](https://github.com/casey/just) task runner. Install 
    - [`examples/base-justfile`](examples/base-justfile) - Scripts/configs/docs only
    - [`examples/java-justfile`](examples/java-justfile) - Java/Maven project
    - [`examples/node-justfile`](examples/node-justfile) - Node/TypeScript project
+   - [`examples/rust-justfile`](examples/rust-justfile) - Rust/Cargo project
 
 2. **Run setup**:
 
@@ -107,12 +108,24 @@ Run on every project. Skip automatically if no relevant files found:
 | `lint-node-format-fix` | prettier | Fix code formatting |
 | `lint-node-ts-types` | tsc | TypeScript type checking |
 
+#### Rust
+
+| Recipe | Tool | Description |
+|--------|------|-------------|
+| `lint-rust` | cargo | Run all Rust linters (currently clippy) |
+| `lint-rust-clippy` | clippy | Lint checks (`cargo clippy`) |
+| `lint-rust-fmt` | rustfmt | Code formatting check |
+| `lint-rust-fmt-fix` | rustfmt | Fix code formatting |
+| `rust-audit` | cargo-audit | Audit dependencies for known RUSTSEC advisories. Separate from `lint-rust` (security check, auto-installs pinned cargo-audit) |
+| `test-rust` | cargo | Run tests (`cargo test`) |
+
 ## Add language-specific linters
 
 Add language-specific recipes to your justfile. The `verify.sh` script (called by `just verify`) **automatically detects** recipes with these names and includes them in the summary:
 
 - Java: `lint-java-checkstyle`, `lint-java-pmd`, `lint-java-spotbugs`
 - Node: `lint-node-eslint`, `lint-node-format`, `lint-node-ts-types`
+- Rust: `lint-rust-clippy`, `lint-rust-fmt`, `rust-audit`
 
 No need to override `lint-all` - just define the recipes and they're picked up automatically.
 
@@ -184,6 +197,56 @@ When you run `just verify`, the verify script automatically detects `lint-node-*
 
 See [`examples/node-justfile`](examples/node-justfile) for a complete example.
 
+### Rust/Cargo Project
+
+To add Rust linting to an existing project, add these recipes to your justfile (no other changes needed):
+
+```just
+rust_lint := devtools_dir + "/linters/rust"
+
+# Run all Rust linters together (convenience command)
+[group('lint')]
+lint-rust:
+    @{{rust_lint}}/lint.sh
+
+# Individual Rust linters (auto-detected by verify.sh)
+[group('lint')]
+lint-rust-clippy:
+    @{{rust_lint}}/clippy.sh
+
+[group('lint')]
+lint-rust-fmt:
+    @{{rust_lint}}/format.sh check
+
+[group('fix')]
+lint-rust-fmt-fix:
+    @{{rust_lint}}/format.sh fix
+
+# Audit dependencies (separate from lint-rust so the lint loop stays fast).
+# Auto-installs the pinned cargo-audit on first run.
+[group('security')]
+rust-audit:
+    @{{rust_lint}}/audit.sh
+```
+
+`just verify` automatically picks up `lint-rust-clippy`, `lint-rust-fmt`, and `rust-audit` and adds them to the summary table:
+
+```text
+Check                  Tool
+---------------------------------------------
+Working Tree           git           ✓
+Commits                gommitlint    ✓
+...
+Rust Clippy            clippy        ✓
+Rust Fmt               rustfmt       ✓
+Rust Audit             cargo-audit   ✓
+---------------------------------------------
+```
+
+The umbrella `just lint-rust` runs the Rust linters (clippy) for local use; rustfmt is intentionally separate (`just lint-rust-fmt`) so a fast format-only check is available without compiling. `rust-audit` is intentionally not part of the lint umbrella — it's a security check that compiles slower and only fires on `just rust-audit` or `just verify`. All three skip automatically when no `Cargo.toml` is present.
+
+See [`examples/rust-justfile`](examples/rust-justfile) for a complete example.
+
 ### Go Project
 
 ```just
@@ -194,17 +257,7 @@ lint-go:
     golangci-lint run
 ```
 
-### Rust Project
-
-```just
-# Rust linters (add to verify.sh detection if needed)
-[group('lint')]
-lint-rust:
-    cargo fmt --check
-    cargo clippy -- -D warnings
-```
-
-> **Note:** Go and Rust linters are not auto-detected by `verify.sh` yet. You can add detection in `scripts/verify.sh` following the Java/Node pattern, or run them separately with `just lint-go` / `just lint-rust`.
+> **Note:** Go linters are not auto-detected by `verify.sh` yet. You can add detection in `scripts/verify.sh` following the Java/Node/Rust pattern, or run them separately with `just lint-go`.
 
 ### Minimal Project (base linters only)
 
@@ -455,6 +508,11 @@ devbase-check/
 │   │   ├── format.sh
 │   │   ├── lint.sh
 │   │   └── types.sh
+│   ├── rust/
+│   │   ├── clippy.sh
+│   │   ├── format.sh
+│   │   ├── lint.sh
+│   │   └── test.sh
 │   ├── commits.sh
 │   ├── container.sh
 │   ├── github-actions.sh
@@ -479,7 +537,8 @@ devbase-check/
 ├── examples/
 │   ├── base-justfile
 │   ├── java-justfile
-│   └── node-justfile
+│   ├── node-justfile
+│   └── rust-justfile
 ├── .mise.toml
 ├── justfile
 └── README.md

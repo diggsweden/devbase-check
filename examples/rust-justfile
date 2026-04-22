@@ -1,0 +1,209 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# Example justfile for a Rust/Cargo project using devbase-check
+
+devtools_repo := env("DEVBASE_CHECK_REPO", "https://github.com/diggsweden/devbase-check")
+devtools_dir := env("XDG_DATA_HOME", env("HOME") + "/.local/share") + "/devbase-check"
+lint := devtools_dir + "/linters"
+rust_lint := devtools_dir + "/linters/rust"
+colors := devtools_dir + "/utils/colors.sh"
+
+# Color variables
+CYAN_BOLD := "\\033[1;36m"
+GREEN := "\\033[1;32m"
+BLUE := "\\033[1;34m"
+NC := "\\033[0m"
+
+# ==================================================================================== #
+# DEFAULT
+# ==================================================================================== #
+
+default:
+    @printf "{{CYAN_BOLD}} My Rust Project{{NC}}\n\n"
+    @printf "Quick start: {{GREEN}}just setup-devtools{{NC}} | {{BLUE}}just verify{{NC}}\n\n"
+    @just --list --unsorted
+
+# ==================================================================================== #
+# SETUP
+# ==================================================================================== #
+
+# ▪ Setup devtools (clone on first run, then delegate to devbase-check)
+[group('setup')]
+setup-devtools:
+    @[ -d "{{devtools_dir}}" ] || { mkdir -p "$(dirname "{{devtools_dir}}")" && git clone --depth 1 "{{devtools_repo}}" "{{devtools_dir}}"; }
+    @"{{devtools_dir}}/scripts/setup.sh" "{{devtools_repo}}" "{{devtools_dir}}"
+
+# ▪ Force-update devtools to latest release tag (or --ref <branch/tag/sha>)
+[group('setup')]
+update-devtools *ARGS:
+    @"{{devtools_dir}}/scripts/update.sh" "{{devtools_dir}}" {{ ARGS }}
+
+# Check required tools
+[group('setup')]
+check-tools: _ensure-devtools
+    @{{devtools_dir}}/scripts/check-tools.sh --check-devtools mise git just cargo rustc rustfmt rumdl yamlfmt actionlint gitleaks shellcheck shfmt gommitlint reuse
+
+# Install Rust dependencies (no-op for cargo; build resolves on demand)
+[group('setup')]
+deps-install:
+    @cargo fetch
+
+# ==================================================================================== #
+# VERIFY
+# ==================================================================================== #
+
+# ▪ Run all checks
+[group('verify')]
+verify: _ensure-devtools check-tools lint-all test
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source "{{colors}}"
+    just_success "All checks passed"
+
+# ==================================================================================== #
+# LINT
+# ==================================================================================== #
+
+# ▪ Run all linters (base + Rust)
+[group('lint')]
+lint-all: _ensure-devtools lint-rust
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source "{{colors}}"
+    just --justfile {{devtools_dir}}/justfile lint-base
+    just_success "All linting checks completed"
+
+# Individual base linters (can be run separately)
+[group('lint')]
+lint-commits:
+    @{{lint}}/commits.sh
+
+[group('lint')]
+lint-secrets:
+    @{{lint}}/secrets.sh
+
+[group('lint')]
+lint-yaml:
+    @{{lint}}/yaml.sh check
+
+[group('lint')]
+lint-markdown:
+    @{{lint}}/markdown.sh check
+
+[group('lint')]
+lint-shell:
+    @{{lint}}/shell.sh
+
+[group('lint')]
+lint-shell-fmt:
+    @{{lint}}/shell-fmt.sh check
+
+[group('lint')]
+lint-actions:
+    @{{lint}}/github-actions.sh
+
+[group('lint')]
+lint-license:
+    @{{lint}}/license.sh
+
+[group('lint')]
+lint-container:
+    @{{lint}}/container.sh
+
+# Lint Rust code (clippy; rustfmt check is a separate recipe)
+[group('lint')]
+lint-rust:
+    @{{rust_lint}}/lint.sh
+
+# Lint Rust - clippy only
+[group('lint')]
+lint-rust-clippy:
+    @{{rust_lint}}/clippy.sh
+
+# Lint Rust - rustfmt check only
+[group('lint')]
+lint-rust-fmt:
+    @{{rust_lint}}/format.sh check
+
+# ==================================================================================== #
+# LINT-FIX
+# ==================================================================================== #
+
+# ▪ Fix all auto-fixable issues
+[group('lint-fix')]
+lint-fix: _ensure-devtools lint-yaml-fix lint-markdown-fix lint-shell-fmt-fix lint-rust-fmt-fix
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source "{{colors}}"
+    just_success "All auto-fixes completed"
+
+[group('lint-fix')]
+lint-yaml-fix:
+    @{{lint}}/yaml.sh fix
+
+[group('lint-fix')]
+lint-markdown-fix:
+    @{{lint}}/markdown.sh fix
+
+[group('lint-fix')]
+lint-shell-fmt-fix:
+    @{{lint}}/shell-fmt.sh fix
+
+# Fix Rust formatting
+[group('lint-fix')]
+lint-rust-fmt-fix:
+    @{{rust_lint}}/format.sh fix
+
+# ==================================================================================== #
+# SECURITY
+# ==================================================================================== #
+
+# Audit crate dependencies for known RUSTSEC advisories. Auto-installs the
+# pinned cargo-audit on first run. Kept separate from `lint-rust` so the lint
+# loop stays fast — invoke explicitly or via `just verify`.
+[group('security')]
+rust-audit:
+    @{{rust_lint}}/audit.sh
+
+# ==================================================================================== #
+# TEST
+# ==================================================================================== #
+
+# ▪ Run tests
+[group('test')]
+test:
+    @{{rust_lint}}/test.sh
+
+# ==================================================================================== #
+# BUILD
+# ==================================================================================== #
+
+# ▪ Build project
+[group('build')]
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source "{{colors}}"
+    just_header "Building" "cargo build --workspace --release"
+    cargo build --workspace --release
+    just_success "Build completed"
+
+# Clean build artifacts
+[group('build')]
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source "{{colors}}"
+    just_header "Cleaning" "cargo clean"
+    cargo clean
+    just_success "Clean completed"
+
+# ==================================================================================== #
+# INTERNAL
+# ==================================================================================== #
+
+[private]
+_ensure-devtools:
+    @just setup-devtools
