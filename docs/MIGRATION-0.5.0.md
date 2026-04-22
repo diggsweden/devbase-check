@@ -17,22 +17,14 @@ latest=$(git -C "$dir" describe --tags --abbrev=0 origin/main)
 git -C "$dir" checkout "$latest"
 ```
 
-**Option 2 — use the escape-hatch recipe** (works even if your consumer justfile hasn't been updated):
+**Option 2 — nuke and re-clone**:
 
 ```bash
-just -f "${XDG_DATA_HOME:-$HOME/.local/share}/devbase-check/justfile" update
-```
-
-This bypasses your own project's justfile entirely and uses devbase-check's internal `update` recipe, which resolves paths via `justfile_directory()` and works from any cwd.
-
-**Option 3 — nuke and re-clone**:
-
-```bash
-rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/devbase-check"
+rm -rf ~/.local/share/devbase-check
 just setup-devtools
 ```
 
-Any of the three gets you onto 0.5.0. After that, the new `setup.sh` is self-healing: it stays silent on transient network failures and retries on the next run instead of warning + giving up.
+Either option gets you onto 0.5.0. After that, the new `setup.sh` is self-healing: it stays silent on transient network failures and retries on the next run instead of warning + giving up.
 
 ---
 
@@ -79,13 +71,15 @@ setup-devtools:
 
 ```just
 setup-devtools:
-    @[[ -d "{{devtools_dir}}" ]] || { mkdir -p "$(dirname "{{devtools_dir}}")" && git clone --depth 1 "{{devtools_repo}}" "{{devtools_dir}}"; }
+    @[ -d "{{devtools_dir}}" ] || { mkdir -p "$(dirname "{{devtools_dir}}")" && git clone --depth 1 "{{devtools_repo}}" "{{devtools_dir}}"; }
     @"{{devtools_dir}}/scripts/setup.sh" "{{devtools_repo}}" "{{devtools_dir}}"
 ```
 
+Note: uses POSIX `[` (single brackets), not bash `[[`. `just`'s default shell is `sh -cu`, which is dash on Debian/Ubuntu and doesn't know `[[`.
+
 Why this is better: no consumer-side pre-fetch. The consumer's recipe doesn't warn or short-circuit on network failure. All logic lives in one place (`setup.sh`), which improves idempotently as we release new versions.
 
-### Add `update-devtools`
+### After that you can add `update-devtools`
 
 ```just
 update-devtools *ARGS:
@@ -94,8 +88,10 @@ update-devtools *ARGS:
 
 ---
 
-If you hit anything not covered here, the escape hatch is always:
+Once you're on 0.5.0+, if your consumer justfile doesn't yet have the `update-devtools` recipe you can force-update via devbase-check's own justfile:
 
 ```bash
 just -f "${XDG_DATA_HOME:-$HOME/.local/share}/devbase-check/justfile" update
 ```
+
+(This requires 0.5.0+ installed — the `update` recipe doesn't exist in older versions. If you're still stuck on an older install, use Option 1 or 2 above.)

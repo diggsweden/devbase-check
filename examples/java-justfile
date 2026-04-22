@@ -34,7 +34,7 @@ default:
 # ▪ Setup devtools (clone on first run, then delegate to devbase-check)
 [group('setup')]
 setup-devtools:
-    @[[ -d "{{devtools_dir}}" ]] || { mkdir -p "$(dirname "{{devtools_dir}}")" && git clone --depth 1 "{{devtools_repo}}" "{{devtools_dir}}"; }
+    @[ -d "{{devtools_dir}}" ] || { mkdir -p "$(dirname "{{devtools_dir}}")" && git clone --depth 1 "{{devtools_repo}}" "{{devtools_dir}}"; }
     @"{{devtools_dir}}/scripts/setup.sh" "{{devtools_repo}}" "{{devtools_dir}}"
 
 # ▪ Force-update devtools to latest release tag (or --ref <branch/tag/sha>)
