@@ -80,6 +80,14 @@ detect_language_linters() {
   if grep -qE "^\s+lint-node-ts-types(\s|#|$)" <<<"$recipes"; then
     LINTERS+=("Node Types|tsc|just lint-node-ts-types")
   fi
+
+  # Rust linters - check for individual recipes
+  if grep -qE "^\s+lint-rust(\s|#|$)" <<<"$recipes"; then
+    LINTERS+=("Rust Clippy|clippy|just lint-rust")
+  fi
+  if grep -qE "^\s+lint-rust-fmt(\s|#|$)" <<<"$recipes"; then
+    LINTERS+=("Rust Fmt|fmt|just lint-rust-fmt")
+  fi
 }
 
 run_linters() {
