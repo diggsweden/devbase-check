@@ -16,6 +16,7 @@ find_shell_scripts() {
     -not -path "./target/*" \
     -not -path "./node_modules/*" \
     -not -path "./tests/libs/*" \
+    -not -path "*/.build/*" \
     2>/dev/null
 }
 
@@ -25,6 +26,7 @@ find_bats_files() {
     -not -path "./target/*" \
     -not -path "./node_modules/*" \
     -not -path "./tests/libs/*" \
+    -not -path "*/.build/*" \
     2>/dev/null
 }
 
