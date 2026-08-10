@@ -19,6 +19,7 @@ find_shell_scripts() {
     -not -path "./node_modules/*" \
     -not -path "./vendor/*" \
     -not -path "./tests/libs/*" \
+    -not -path "*/.build/*" \
     2>/dev/null
 }
 
