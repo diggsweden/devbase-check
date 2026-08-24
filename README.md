@@ -411,6 +411,41 @@ Example `development/spotbugs-exclude.xml`:
 </FindBugsFilter>
 ```
 
+### Organization-Specific Secret Rules
+
+`lint-secrets` can layer extra gitleaks rules *on top of* the defaults and your
+repo's own `.gitleaks.toml`, controlled by `DEVBASE_CHECK_ORG_RULES`. It is
+**opt-in and off by default**, so it has no effect until a repo enables it.
+
+| `DEVBASE_CHECK_ORG_RULES` | Behaviour |
+|---------------------------|-----------|
+| unset / `0` / `false` (default) | No change — gitleaks uses your repo's `.gitleaks.toml` (or its own defaults). |
+| `1` / `true` | Layer the shipped example overlay (`linters/config/org-rules.toml`) on top of your existing config. |
+| a file path | Layer that overlay file instead — for your organization's real internal hosts/URLs. |
+
+When enabled, `secrets.sh` generates a temporary config that `[extend]`s your
+repo's `.gitleaks.toml` (or the gitleaks defaults when you have none) and appends
+the overlay's rules, so your existing rules **and** allowlists still apply.
+
+The shipped overlay (`1` / `true`) only contains a placeholder domain — it's a
+template showing the rule shape, not a real hostname. This is a public repo, so
+committing your organization's actual internal domain here would disclose real
+infrastructure. Instead, write your own overlay file with your real host
+pattern, keep it outside this repo (e.g. a private repo, or a file written from
+a CI secret), and point `DEVBASE_CHECK_ORG_RULES` at its path:
+
+```just
+lint-secrets:
+    @DEVBASE_CHECK_ORG_RULES=/path/to/private/org-rules.toml {{lint}}/secrets.sh
+```
+
+Or, to try the shipped template as-is:
+
+```just
+lint-secrets:
+    @DEVBASE_CHECK_ORG_RULES=1 {{lint}}/secrets.sh
+```
+
 ### Handling an Incomplete mise Install
 
 mise is the source of truth for which tool version runs. Before running linters, `verify.sh` checks that every tool pinned in `.mise.toml` is installed. If any pin is missing, it fails fast with a single actionable message instead of letting each linter fail separately:
