@@ -514,3 +514,52 @@ EOF
   run bash -c "grep -c 'affected linters will be skipped' <<<\"$output\""
   assert_output "1"
 }
+
+@test "verify.sh runs specified extensions" {
+  cat > justfile << 'EOF'
+# SPDX-FileCopyrightText: 2026 Test
+# SPDX-License-Identifier: MIT
+lint-version-control:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-commits:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-secrets:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-yaml:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-markdown:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-shell-fmt:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-actions:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-license:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-container:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-xml:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-foo:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-bar:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+lint-baz:
+  @printf "DEVBASE_CHECK_STATUS=pass\n"
+EOF
+
+  run "$SCRIPT_DIR/verify.sh" \
+      --extension="Foo|foo-tool|just lint-foo" \
+      --extension="Bar|bar-tool|just lint-bar"
+
+  assert_success
+  assert_output --partial "Commits"
+  assert_output --partial "YAML"
+  assert_output --partial "Markdown"
+  assert_output --partial "Shell"
+  assert_output --partial "License"
+  assert_output --partial "Foo"
+  assert_output --partial "Bar"
+  refute_output --partial "Baz"
+}

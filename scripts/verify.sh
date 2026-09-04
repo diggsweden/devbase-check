@@ -239,6 +239,9 @@ parse_args() {
       print_usage
       exit 0
       ;;
+    -e=* | --extension=*)
+      LINTERS+=("${arg#*=}")
+      ;;
     *)
       printf 'verify.sh: unknown argument: %s\n\n' "$arg" >&2
       print_usage >&2
