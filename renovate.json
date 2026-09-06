@@ -24,7 +24,8 @@
       "addLabels": [
         "linting"
       ],
-      "groupName": "linting tools"
+      "groupName": "linting tools",
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Security and compliance tools",
@@ -40,7 +41,8 @@
       "addLabels": [
         "security"
       ],
-      "groupName": "security tools"
+      "groupName": "security tools",
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Testing tools",
@@ -53,7 +55,8 @@
       "addLabels": [
         "testing"
       ],
-      "groupName": "testing tools"
+      "groupName": "testing tools",
+      "minimumReleaseAge": "7 days"
     }
   ],
   "customManagers": [
