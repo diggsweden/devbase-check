@@ -551,7 +551,7 @@ EOF
 
   run "$SCRIPT_DIR/verify.sh" \
       --extension="Foo|foo-tool|just lint-foo" \
-      --extension="Bar|bar-tool|just lint-bar"
+      -e="Bar|bar-tool|just lint-bar"
 
   assert_success
   assert_output --partial "Commits"
