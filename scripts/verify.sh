@@ -218,6 +218,16 @@ Options:
                              Linters whose tool isn't installed emit a
                              skip marker; the rest run normally. Useful
                              in CI when a subset of tools is unavailable.
+
+  -e=*, --extension=<Check>|<Tool>|<command>
+                             Adds an extension to include in the linter
+                             run. The <Check> and <Tool> fields are
+                             displayed in the post run summary and
+                             <command> is the command to execute.
+
+                             Example:
+                             -e='Shell Scripts|shellcheck|just lint-shell'
+
   -h, --help                 Show this help.
 
 Environment:
@@ -238,6 +248,9 @@ parse_args() {
     -h | --help)
       print_usage
       exit 0
+      ;;
+    -e=* | --extension=*)
+      LINTERS+=("${arg#*=}")
       ;;
     *)
       printf 'verify.sh: unknown argument: %s\n\n' "$arg" >&2
