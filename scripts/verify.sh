@@ -35,6 +35,8 @@ LINTERS=(
 
 declare -A RESULTS
 declare -A OUTPUTS
+EXTENSIONS=()
+declare -A EXTENSION_CHECKS=()
 
 extract_status_marker() {
   local output="$1"
@@ -95,6 +97,27 @@ detect_language_linters() {
   fi
 }
 
+# Summary results are keyed by check name, including auto-detected linters.
+# Validate the complete list before executing any command to prevent an
+# extension from overwriting another check's result.
+validate_linters() {
+  local definition check tool cmd
+  local -A seen=()
+  for definition in "${LINTERS[@]}"; do
+    IFS='|' read -r check tool cmd <<<"$definition"
+    if [[ "$definition" != *"|"*"|"* || "$definition" == *$'\n'* || "$definition" == *$'\r'* ||
+      -z "${check//[[:space:]]/}" || -z "${tool//[[:space:]]/}" || -z "${cmd//[[:space:]]/}" ]]; then
+      printf 'verify.sh: invalid extension; expected Check|Tool|command: %s\n' "$definition" >&2
+      return 2
+    fi
+    if [[ -n "${seen[$check]:-}" ]]; then
+      printf 'verify.sh: duplicate check name: %s\n' "$check" >&2
+      return 2
+    fi
+    seen["$check"]=1
+  done
+}
+
 run_linters() {
   local failed=0
 
@@ -116,7 +139,13 @@ run_linters() {
     status_marker=$(extract_status_marker "$raw_output")
     details_marker=$(extract_details_marker "$raw_output")
 
-    if [[ -n "$status_marker" ]]; then
+    # Missing-tool skips intentionally return non-zero. Other successful
+    # markers must not conceal a command failure (including extension commands).
+    if [[ $exit_code -ne 0 && "$status_marker" != "skip" ]]; then
+      status="fail"
+      details="${details_marker:-failed}"
+      ((failed++))
+    elif [[ -n "$status_marker" ]]; then
       case "$status_marker" in
       na) status="n/a" ;;
       *) status="$status_marker" ;;
@@ -133,7 +162,7 @@ run_linters() {
       *) details="${details_marker:-ok}" ;;
       esac
     elif [[ $exit_code -eq 0 ]]; then
-      if [[ -z "${output// /}" ]]; then
+      if [[ -z "${output// /}" && -z "${EXTENSION_CHECKS[$check]:-}" ]]; then
         # Empty output = linter disabled, skip entirely
         status="disabled"
         details=""
@@ -160,7 +189,7 @@ run_linters() {
     RESULTS["$check"]="$status|$tool|$details"
   done
 
-  return $failed
+  return "$((failed > 0))"
 }
 
 print_summary() {
@@ -218,6 +247,13 @@ Options:
                              Linters whose tool isn't installed emit a
                              skip marker; the rest run normally. Useful
                              in CI when a subset of tools is unavailable.
+
+  -e=<Check>|<Tool>|<command>, --extension=<Check>|<Tool>|<command>
+                             Add a custom check to the run and summary.
+                             Repeat for multiple checks; names must be unique.
+                             Quote the entire value to protect shell pipes:
+                             --extension='Spelling|cspell|just lint-spelling'
+
   -h, --help                 Show this help.
 
 Environment:
@@ -238,6 +274,9 @@ parse_args() {
     -h | --help)
       print_usage
       exit 0
+      ;;
+    -e=* | --extension=*)
+      EXTENSIONS+=("${arg#*=}")
       ;;
     *)
       printf 'verify.sh: unknown argument: %s\n\n' "$arg" >&2
@@ -289,12 +328,19 @@ main() {
   # Load appropriate summary module based on CI environment
   load_summary_module
 
+  detect_language_linters
+  LINTERS+=("${EXTENSIONS[@]}")
+  validate_linters || return $?
+  local extension check
+  for extension in "${EXTENSIONS[@]}"; do
+    IFS='|' read -r check _ <<<"$extension"
+    EXTENSION_CHECKS["$check"]=1
+  done
+
   if ! mise_preflight; then
     return 1
   fi
   export DEVBASE_CHECK_PREFLIGHT_DONE=1
-
-  detect_language_linters
 
   run_linters
   local linter_exit=$?

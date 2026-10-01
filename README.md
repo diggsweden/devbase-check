@@ -289,6 +289,26 @@ All defined `lint-*` recipes are automatically detected and included in the summ
 
 You can override any linter recipe in your project's justfile to customize behavior or skip checks.
 
+### Add Custom Checks
+
+Pass repeatable `--extension='Check|Tool|command'` options (or `-e=...`) to
+`verify.sh` to run additional checks and include them in the same summary:
+
+```just
+lint-all: _ensure-devtools
+    @{{devtools_dir}}/scripts/verify.sh --extension='Spelling|cspell|just lint-spelling'
+```
+
+Quote the entire value so that the shell passes the pipes and spaces intact.
+Check names must be non-empty and unique across base, language-specific, and
+custom checks. Tool and command fields must also be non-empty. Commands run as
+shell commands in the project directory; pipelines are supported. A failed
+check makes verification fail, while subsequent checks still run. Successful
+extensions appear in the summary even when their commands produce no output.
+
+In this repository, `just verify`, `just lint-base`, and `just lint-all` also
+accept these options directly.
+
 ### Disable or Skip a Linter
 
 Two options to disable a linter:

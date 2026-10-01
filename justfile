@@ -51,8 +51,9 @@ update *ARGS:
 
 # ▪ Run all linters with summary
 [group('verify')]
+[positional-arguments]
 verify *ARGS:
-    @./scripts/verify.sh {{ ARGS }}
+    @./scripts/verify.sh "$@"
 
 # ==================================================================================== #
 # LINT - Code quality checks
@@ -60,12 +61,15 @@ verify *ARGS:
 
 # ▪ Run all base linters (universal linters for any project)
 [group('lint')]
+[positional-arguments]
 lint-base *ARGS:
-    @./scripts/verify.sh {{ ARGS }}
+    @./scripts/verify.sh "$@"
 
 # ▪ Run all linters (default, uses lint-base)
 [group('lint')]
-lint-all *ARGS: (lint-base ARGS)
+[positional-arguments]
+lint-all *ARGS:
+    @just lint-base "$@"
 
 # Validate version control
 [group('lint')]
