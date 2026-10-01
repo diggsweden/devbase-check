@@ -163,8 +163,6 @@ test:
     fi
     [[ -d tests/libs ]] || ./tests/setup-bats-libs.sh
     bats tests/
-    result=$?
-    if [[ $result -le 1 ]]; then exit 0; else exit $result; fi
 
 # Setup test dependencies (bats libraries)
 [group('test')]
@@ -182,8 +180,6 @@ test-verbose:
     fi
     [[ -d tests/libs ]] || ./tests/setup-bats-libs.sh
     bats --verbose-run tests/
-    result=$?
-    if [[ $result -le 1 ]]; then exit 0; else exit $result; fi
 
 # Run specific test file
 [group('test')]
@@ -196,8 +192,6 @@ test-file file:
     fi
     [[ -d tests/libs ]] || ./tests/setup-bats-libs.sh
     bats "tests/{{file}}"
-    result=$?
-    if [[ $result -le 1 ]]; then exit 0; else exit $result; fi
 
 # Run tests matching a filter
 [group('test')]
@@ -210,5 +204,3 @@ test-filter filter:
     fi
     [[ -d tests/libs ]] || ./tests/setup-bats-libs.sh
     bats -f "{{filter}}" tests/
-    result=$?
-    if [[ $result -le 1 ]]; then exit 0; else exit $result; fi
