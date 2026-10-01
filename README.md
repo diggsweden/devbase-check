@@ -501,11 +501,35 @@ If using [reusable-ci](https://github.com/diggsweden/reusable-ci), enable devbas
 ```yaml
 jobs:
   lint:
-    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@cd65f1f80267cc82d7e4cdecc26be83908417b01 # v2.7.1
+    uses: diggsweden/reusable-ci/.github/workflows/pullrequest-orchestrator.yml@997d7dc2238b40c79798fda309d8061b0707a3e5 # v3.0.0
+    permissions:
+      contents: read
+      packages: read
+    secrets:
+      CODE_SCANNING_TOKEN: ${{ secrets.CODE_SCANNING_TOKEN }}
     with:
+      reusable-ci-ref: 997d7dc2238b40c79798fda309d8061b0707a3e5
       project-type: maven
       linters.devbasecheck: true
+      linters.commitlint: false
+      linters.licenselint: false
+      linters.megalint: false
 ```
+
+Pin `uses` and `reusable-ci-ref` to the same release commit. v3 requires
+explicit `secrets:` mappings using the canonical names; `env:` does not pass
+secrets to a reusable workflow, and legacy secret names have no aliases.
+
+This repository's PR and Scorecard workflows pass only `CODE_SCANNING_TOKEN`
+for Code Scanning uploads. Its changelog-only release workflow passes
+`RELEASE_TOKEN`, `RELEASE_GPG_PRIVATE_KEY`, `RELEASE_GPG_PASSPHRASE`, and
+`RELEASE_GPG_PUBLIC_KEY` for release validation, signing, and publication.
+Configure these canonical repository or organisation secrets and grant this
+repository access. Release jobs also need `pull-requests: read` for changelog
+metadata, alongside their other release permissions.
+
+See the [reusable-ci v3 migration guide](https://github.com/diggsweden/reusable-ci/blob/997d7dc2238b40c79798fda309d8061b0707a3e5/docs/migration.md)
+for the complete secret-name mapping and release-tag requirements.
 
 ## Directory Structure
 
