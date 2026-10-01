@@ -21,6 +21,10 @@
 # Standard test setup - creates temp dir and sets DEVTOOLS_ROOT
 # Usage: common_setup
 common_setup() {
+  # Default to console summaries regardless of the runner environment.
+  # CI-specific tests opt in explicitly with their own summary destinations.
+  unset GITHUB_STEP_SUMMARY CI_JOB_URL GITEA_ACTIONS
+
   TEST_DIR="$(temp_make)"
   export TEST_DIR
   export DEVTOOLS_ROOT="${BATS_TEST_DIRNAME}/.."
