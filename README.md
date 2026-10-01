@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC0-1.0
 
 [![Tag](https://img.shields.io/github/v/tag/diggsweden/devbase-check?style=for-the-badge&color=green)](https://github.com/diggsweden/devbase-check/tags)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSES/MIT.txt)
 [![REUSE](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.reuse.software%2Fstatus%2Fgithub.com%2Fdiggsweden%2Fdevbase-check&query=status&style=for-the-badge&label=REUSE&color=lightblue)](https://api.reuse.software/info/github.com/diggsweden/devbase-check)
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/diggsweden/devbase-check/badge?style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/diggsweden/devbase-check)
