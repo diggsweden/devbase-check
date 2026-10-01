@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 Digg - Agency for Digital Government
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# Example organization-specific gitleaks rules (overlay) - TEMPLATE.
+#
+# This file is a RULES-ONLY overlay: it deliberately has no [extend] and no
+# allowlists. secrets.sh layers it on top of a repo's existing gitleaks
+# configuration when DEVBASE_CHECK_ORG_RULES is enabled, so the rules below
+# apply *in addition to* the gitleaks defaults and the repo's own rules and
+# allowlists - never replacing them.
+#
+# OPT-IN ONLY. With DEVBASE_CHECK_ORG_RULES unset (the default) this file is
+# never loaded, so shipping it has zero effect on any repo until a team opts
+# in.
+#
+# This file ships with a placeholder domain, not a real internal hostname:
+# publishing that here would disclose real infrastructure to anyone who reads
+# this public repo. To use your organization's actual internal host pattern,
+# keep it in a private overlay file (outside this repo) and point
+# DEVBASE_CHECK_ORG_RULES at its path - see README.md.
+
+[[rules]]
+id = "org-internal-hosts"
+description = "Detect internal organization production hosts (example pattern - replace with your real domain in a private overlay)"
+regex = '''https?://[a-zA-Z0-9.-]*\.internal\.example(?:/[a-zA-Z0-9._~:/?#\[\]@!$&'"()*,;=+-]*)?'''
+keywords = [
+    "internal.example",
+]
