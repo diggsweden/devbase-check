@@ -74,7 +74,7 @@ Run on every project. Skip automatically if no relevant files found:
 |--------|------|--------|------------|
 | `lint-version-control` | git | Working tree is clean and version controlled | Never (fails if dirty or outside a Git repo) |
 | `lint-commits` | gommitlint | Commit message format | On default branch or no new commits |
-| `lint-secrets` | gitleaks | Secrets/credentials | Never (scans commits) |
+| `lint-secrets` | gitleaks | Secrets/credentials | Never (scans commits plus staged and unstaged changes) |
 | `lint-yaml` | yamlfmt | YAML formatting | No .yml/.yaml files |
 | `lint-markdown` | rumdl | Markdown style | No .md files |
 | `lint-shell` | shellcheck | Shell script bugs | No .sh/.bash files |
@@ -430,6 +430,23 @@ Example `development/spotbugs-exclude.xml`:
     <Match><Package name="~com\.example\.generated.*"/></Match>
 </FindBugsFilter>
 ```
+
+### Organisation Secret Rules
+
+`lint-secrets` can scan with a shared set of gitleaks rules in addition to the
+project's own `.gitleaks.toml`, e.g. rules that keep internal host names out of
+public repositories. The rules are read from `gitleaks/rules.toml` in a rules
+repository, configured with one of:
+
+| Variable | Value |
+|----------|-------|
+| `DEVBASE_ORG_RULES_REPO` | Git URL of the rules repository, cloned and updated into `~/.local/share/devbase-check-org-rules` |
+| `DEVBASE_ORG_RULES_DIR` | Path to a local checkout of the rules repository |
+
+Set the variable in your shell or CI environment rather than in the project,
+since the URL may itself be internal. When neither is set, the extra scan is
+skipped. When one is set but the rules cannot be read, `lint-secrets` fails.
+Exceptions go into the project's `.gitleaksignore`.
 
 ### Handling an Incomplete mise Install
 
